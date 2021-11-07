@@ -43,7 +43,7 @@ Heavy: Veteran agents (car-4/m4).
 This is the faction used for Boiling Point. The folder for this dlc contains unique "cop" units that aren't actually used (although I believe they used to be a part of the assault force back when the heist released). The same units are used for all difficulties, which are as follows:
 
 Light: Cops with smgs (krinkov/akmsu and krinkov/asval. I don't actually know if the asval units are different because despite their name they actually just use the akmsu).
-Heavy: Cops with rifles (AK/ak47_ass) or shotguns (reinfield/r870)
+Heavy: Cops with rifles (AK.762/ak47_ass) or shotguns (reinfield/r870)
 
 ### Zombie
 This faction uses zombiefied versions of the appropriate America faction units for the difficulty. Zombiefied versions of all those units exist in the game files, even though I'm pretty sure those guys were already removed from all spawngroups. I cannot actually test if this works because Cursed Kill Room doesn't have assault breaks. If you have a custom heist that uses zombie units and has assault breaks, lemme know how it goes (and give me the heist).
@@ -127,7 +127,9 @@ Heavy: Veteran agents (car-4/m4).
 
 ##### Q: Have you tried adding [heist-specific units]?
 A: I welcome suggestions for this! However, there are two I have already considered so please don't ask me about these:
+
 Murkywater recon on Meltdown and Slaughterhouse: I originally wanted to do this, however these heists simply don't load the packages containing the units that I want. The units that are available on these heists either have no damage scaling or only scale up to Very Hard, so they do either average or a lot of damage on normal (relatively), and pitiful damage on Death Sentence.
+
 Gangster recon: While it would be cool to have, say, mendozas or commissar's mobsters return on their respective heists between assaults to attack you, I just don't think it would work. Recon's main job is to rescue hostages and confiscate loot, I don't even know if the gangster AI can do this. If it can't, I'd have to add regular recon as well, which would then fight the gangsters, possibly making both enemy types ineffective at actually fighting the player. Also, it's possible the gangsters would just be assigned to the police team, which would be even weirder.
 
 ##### Q: My game crashed!
