@@ -24,6 +24,16 @@
 			"hook_id" : "lib/managers/group_ai_states/groupaistatestreet",
 			"script_path" : "lua/lib/managers/group_ai_states/groupaistatestreet.lua"
 		}
+	],
+	"updates" :
+	[
+		{
+			"identifier": "star_recon_task_restored_expanded",
+            		"host":
+			{
+				"meta": "https://raw.githubusercontent.com/staryoshi06/ReconTaskRestoredExpanded/main/Recon%20Task%20Restored%20and%20Expanded/updates/meta.json"
+			}
+		}
 	]
 
 }
