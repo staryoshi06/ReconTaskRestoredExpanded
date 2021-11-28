@@ -36,7 +36,7 @@ Hooks:PostHook(GroupAIStateBesiege, "_upd_recon_tasks", "star_recon_upd_recon_ta
 
     -- call out delay voiceline
     -- modified from _upd_assault_task
-    if task_data.is_hesitating and task_data.voice_delay < self._t then
+    if task_data.is_hesitating and task_data.voice_delay and task_data.voice_delay < self._t then
         if self._hostage_headcount > 0 then
             local best_group = nil
 
