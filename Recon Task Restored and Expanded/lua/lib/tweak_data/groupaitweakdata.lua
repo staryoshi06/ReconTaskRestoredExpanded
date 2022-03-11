@@ -11,7 +11,7 @@ function getHeistType()
         return "remote"
     elseif level_id == "rvd1" or level_id == "rvd2" then
         return "la"
-    elseif level_id == "chas" or level_id == "sand" then
+    elseif level_id == "chas" or level_id == "sand" or level_id == "pent" then
         return "sanfran"
     else
         return "normal"

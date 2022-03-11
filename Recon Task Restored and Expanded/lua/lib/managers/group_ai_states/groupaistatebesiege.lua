@@ -25,9 +25,15 @@ Hooks:PostHook(GroupAIStateBesiege, "_end_regroup_task", "star_recon_end_regroup
         assault_task.is_hesitating = true
         if assault_task.next_dispatch_t then
             -- we'll call out the extra assault delay once normal delay ends
-            assault_task.voice_delay = assault_task.next_dispatch_t - self._t
-            assault_task.next_dispatch_t = assault_task.next_dispatch_t + self:_get_difficulty_dependent_value(self._tweak_data.assault.hostage_hesitation_delay)
+            assault_task.voice_delay = assault_task.next_dispatch_t
         end
+        local break_time = self:_get_difficulty_dependent_value(self._tweak_data.assault.delay) + self:_get_difficulty_dependent_value(self._tweak_data.assault.hostage_hesitation_delay)
+        --if less than 60 we add extra 5 seconds per hostage, but max 60 (if a difficulty would allow it to exceed 60 by default then I do not want to change that).
+        if break_time < 60 then
+            break_time = break_time + 5 * (self._hostage_headcount - 1)
+            if break_time > 60 then break_time = 60 end
+        end
+        assault_task.next_dispatch_t = self._t + break_time
 	end
 end)
 
