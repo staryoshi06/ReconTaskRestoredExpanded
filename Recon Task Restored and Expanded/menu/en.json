@@ -1,0 +1,21 @@
+{
+    "star_recon_menu_title" : "Recon Task Restored and Expanded",
+    "star_recon_menu_desc" : "Settings for recon enemies and spawn behaviour during assault",
+    "recon_enemy_set_title" : "Enemy Set",
+    "recon_enemy_set_desc" : "Which enemies to use below overkill difficulty.",
+    "enemy_set_normal" : "Normal",
+    "enemy_set_no_cops" : "No Cops",
+    "enemy_set_classic" : "Classic",
+    "recon_assault_condition_title" : "Spawn In Assault",
+    "recon_assault_condition_desc" : "Under what condition will recon enemies spawn during an assault",
+    "assault_condition_never" : "Never",
+    "assault_condition_hostage" : "If Hostages",
+    "assault_condition_hostage_loot" : "If Hostages/Loot",
+    "assault_condition_always" : "Always",
+    "recon_assault_behaviour_title" : "Assault Behaviour",
+    "recon_assault_behaviour_desc" : "How recon should spawn during the assault",
+    "assault_behaviour_go" : "Go In",
+    "assault_behaviour_reenforce" : "Reinforce",
+    "assault_behaviour_go_else_reenforce" : "Go In, Else Reinforce",
+    "assault_behaviour_always_reenforce" : "Always Reinforce + Go In"
+}

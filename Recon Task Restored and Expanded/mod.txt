@@ -23,7 +23,11 @@
 		{
 			"hook_id" : "lib/managers/group_ai_states/groupaistatestreet",
 			"script_path" : "lua/lib/managers/group_ai_states/groupaistatestreet.lua"
-		}
+		},
+		{
+			"hook_id" : "lib/managers/menumanager",
+			"script_path" : "lua/lib/managers/menumanager.lua"
+		},
 	],
 	"updates" :
 	[
