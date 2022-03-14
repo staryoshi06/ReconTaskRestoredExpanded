@@ -1,8 +1,8 @@
 {
     "star_recon_menu_title" : "Recon Task Restored and Expanded",
-    "star_recon_menu_desc" : "Settings for recon enemies and spawn behaviour during assault",
+    "star_recon_menu_desc" : "Settings for recon enemies and spawn behaviour during assault. Explanations in mod folder.",
     "recon_enemy_set_title" : "Enemy Set",
-    "recon_enemy_set_desc" : "Which enemies to use below overkill difficulty.",
+    "recon_enemy_set_desc" : "Which enemies to use. Most noticable below overkill difficulty.",
     "enemy_set_normal" : "Normal",
     "enemy_set_no_cops" : "No Cops",
     "enemy_set_classic" : "Classic",
