@@ -7,7 +7,7 @@ function getHeistType()
         return nil
     elseif level_id == "firestarter_2" or level_id == "hox_2" or level_id == "hox_3" then
         return "fbi"
-    elseif level_id == "welcome_to_the_jungle_2" or level_id == "chew" or level_id == "chca" then
+    elseif level_id == "welcome_to_the_jungle_2" or level_id == "chew" or level_id == "chca" or level_id == "bph" or (StarReconMenu and StarReconMenu._data.enemy_set == 2) then
         return "remote"
     elseif level_id == "rvd1" or level_id == "rvd2" then
         return "la"
@@ -24,6 +24,9 @@ end)
 
 --Define recon units and add to original
 Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_categories", function(self, difficulty_index)
+    local access_type_walk_only = {
+		walk = true
+	}
     local access_type_all = {
 		acrobatic = true,
 		walk = true
@@ -79,8 +82,10 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
         murky_c45 = murky_ump
     end
 
+    is_classic = StarReconMenu and StarReconMenu._data.enemy_set == 3
+
     --Normal
-    if (difficulty_index <= 2) then
+    if difficulty_index <= 2 then
         self.unit_categories.RECON_light = {
             unit_types = {
                 america = {
@@ -132,7 +137,7 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
         }
 
     --Hard/Very Hard
-    elseif (difficulty_index <= 4) then
+    elseif difficulty_index <= 4 and not is_classic then
         self.unit_categories.RECON_light = {
             unit_types = {
                 america = {
@@ -187,7 +192,7 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
         }
 
     --Overkill/Mayhem
-    elseif (difficulty_index <= 6) then
+    elseif difficulty_index <= 6 then
         self.unit_categories.RECON_light = {
             unit_types = {
                 america = {
@@ -288,6 +293,108 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
         }
     end
 
+    --for Classic style; police are mostly the same as normal difficulty except for russia faction and access type
+    self.unit_categories.RECON_police_light = {
+        unit_types = {
+            america = {
+                Idstring("units/payday2/characters/ene_cop_1/ene_cop_1"),
+                Idstring("units/payday2/characters/ene_cop_2/ene_cop_2")
+            },
+            russia = {
+                Idstring("units/pd2_dlc_mad/characters/ene_akan_cs_cop_ak47_ass/ene_akan_cs_cop_ak47_ass"),
+                Idstring("units/pd2_dlc_mad/characters/ene_akan_cs_cop_r870/ene_akan_cs_cop_r870")
+            },
+            zombie = {
+                Idstring("units/pd2_dlc_hvh/characters/ene_cop_hvh_1/ene_cop_hvh_1"),
+                Idstring("units/pd2_dlc_hvh/characters/ene_cop_hvh_2/ene_cop_hvh_2")
+            },
+            murkywater = {
+                murky_c45
+            },
+            federales = {
+                Idstring("units/pd2_dlc_bex/characters/ene_policia_01/ene_policia_01"),
+                Idstring("units/pd2_dlc_bex/characters/ene_policia_02/ene_policia_02")
+            }
+        },
+        access = access_type_walk_only
+    }
+
+    self.unit_categories.RECON_police_heavy = {
+        unit_types = {
+            america = {
+                Idstring("units/payday2/characters/ene_cop_3/ene_cop_3"),
+                Idstring("units/payday2/characters/ene_cop_4/ene_cop_4")
+            },
+            russia = {
+                Idstring("units/pd2_dlc_mad/characters/ene_akan_cs_cop_akmsu_smg/ene_akan_cs_cop_akmsu_smg"),
+                Idstring("units/pd2_dlc_mad/characters/ene_akan_cs_cop_asval_smg/ene_akan_cs_cop_asval_smg")
+            },
+            zombie = {
+                Idstring("units/pd2_dlc_hvh/characters/ene_cop_hvh_3/ene_cop_hvh_3"),
+                Idstring("units/pd2_dlc_hvh/characters/ene_cop_hvh_4/ene_cop_hvh_4")
+            },
+            murkywater = {
+                murky_c45
+            },
+            federales = {
+                Idstring("units/pd2_dlc_bex/characters/ene_policia_01/ene_policia_01"),
+                Idstring("units/pd2_dlc_bex/characters/ene_policia_02/ene_policia_02")
+            }
+        },
+        access = access_type_walk_only
+    }
+
+    -- similar to CS_swat but different for mayhem/death wish
+    if difficulty_index == 6 or difficulty_index == 7 then
+        self.unit_categories.RECON_swat_smg = {
+            unit_types = {
+                unit_types = {
+                    america = {
+                        Idstring("units/payday2/characters/ene_city_swat_3/ene_city_swat_3")
+                    },
+                    russia = {
+                        Idstring("units/pd2_dlc_mad/characters/ene_akan_cs_swat_ak47_ass/ene_akan_cs_swat_ak47_ass")
+                    },
+                    zombie = {
+                        Idstring("units/pd2_dlc_hvh/characters/ene_swat_hvh_1/ene_swat_hvh_1")
+                    },
+                    murkywater = {
+                        Idstring("units/pd2_dlc_bph/characters/ene_murkywater_light/ene_murkywater_light")
+                    },
+                    federales = {
+                        Idstring("units/pd2_dlc_bex/characters/ene_swat_policia_federale/ene_swat_policia_federale")
+                    }
+            },
+            access - access_type_all
+        }
+
+        self.unit_categories.RECON_swat_shotty = {
+            unit_types = {
+                unit_types = {
+                    america = {
+                        Idstring("units/payday2/characters/ene_city_swat_2/ene_city_swat_2")
+                    },
+                    russia = {
+                        Idstring("units/pd2_dlc_mad/characters/ene_akan_cs_swat_r870/ene_akan_cs_swat_r870")
+                    },
+                    zombie = {
+                        Idstring("units/pd2_dlc_hvh/characters/ene_swat_hvh_2/ene_swat_hvh_2")
+                    },
+                    murkywater = {
+                        Idstring("units/pd2_dlc_bph/characters/ene_murkywater_light_r870/ene_murkywater_light_r870")
+                    },
+                    federales = {
+                        Idstring("units/pd2_dlc_bex/characters/ene_swat_policia_federale_r870/ene_swat_policia_federale_r870")
+                    }
+            },
+            access - access_type_all
+        }
+    else
+        self.unit_categories.RECON_swat_smg = self.unit_categories.CS_swat_MP5
+        self.unit_categories.RECON_swat_shotty = self.unit_categories.CS_swat_R870
+        
+    end
+
     -- per level modifications
     heist_type = getHeistType()
     if heist_type and heist_type == "fbi" then
@@ -341,13 +448,33 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
             self.unit_categories.RECON_light.unit_types.america = {
                 Idstring("units/payday2/characters/ene_fbi_1/ene_fbi_1")
             }
+            self.unit_categories.RECON_light.unit_types.zombie = {
+                Idstring("units/pd2_dlc_hvh/characters/ene_fbi_hvh_1/ene_fbi_hvh_1")
+            }
+            self.unit_categories.RECON_light.unit_types.federales = {
+                Idstring("units/payday2/characters/ene_fbi_1/ene_fbi_1")
+            }
 
             self.unit_categories.RECON_heavy.unit_types.america = {
                 Idstring("units/payday2/characters/ene_fbi_2/ene_fbi_2")
             }
+            self.unit_categories.RECON_heavy.unit_types.zombie = {
+                Idstring("units/pd2_dlc_hvh/characters/ene_fbi_hvh_2/ene_fbi_hvh_2")
+            }
+            self.unit_categories.RECON_heavy.unit_types.federales = {
+                Idstring("units/payday2/characters/ene_fbi_2/ene_fbi_2")
+            }
             
-        elseif difficulty_index <= 4 then
+        elseif difficulty_index <= 4 and not is_classic then
             self.unit_categories.RECON_light.unit_types.america = {
+                Idstring("units/payday2/characters/ene_fbi_1/ene_fbi_1"),
+                Idstring("units/payday2/characters/ene_fbi_2/ene_fbi_2")
+            }
+            self.unit_categories.RECON_light.unit_types.zombie = {
+                Idstring("units/pd2_dlc_hvh/characters/ene_fbi_hvh_1/ene_fbi_hvh_1"),
+                Idstring("units/pd2_dlc_hvh/characters/ene_fbi_hvh_2/ene_fbi_hvh_2")
+            }
+            self.unit_categories.RECON_light.unit_types.federales = {
                 Idstring("units/payday2/characters/ene_fbi_1/ene_fbi_1"),
                 Idstring("units/payday2/characters/ene_fbi_2/ene_fbi_2")
             }
@@ -356,11 +483,19 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
                 Idstring("units/payday2/characters/ene_fbi_2/ene_fbi_2"),
                 Idstring("units/payday2/characters/ene_fbi_3/ene_fbi_3")
             }
+            self.unit_categories.RECON_heavy.unit_types.zombie = {
+                Idstring("units/pd2_dlc_hvh/characters/ene_fbi_hvh_2/ene_fbi_hvh_2"),
+                Idstring("units/pd2_dlc_hvh/characters/ene_fbi_hvh_3/ene_fbi_hvh_3")
+            }
+            self.unit_categories.RECON_heavy.unit_types.federales = {
+                Idstring("units/payday2/characters/ene_fbi_2/ene_fbi_2"),
+                Idstring("units/payday2/characters/ene_fbi_3/ene_fbi_3")
+            }
         end
 
     elseif heist_type and heist_type == "la" then
         --la cops for reservoir dogs, like the scripted spawn
-        if difficulty_index <= 2 then
+        if difficulty_index <= 2 or (difficulty_index == 3 and is_classic) then
             self.unit_categories.RECON_light.unit_types.america = {
                 Idstring("units/pd2_dlc_rvd/characters/ene_la_cop_1/ene_la_cop_1"),
                 Idstring("units/pd2_dlc_rvd/characters/ene_la_cop_2/ene_la_cop_2")
@@ -371,7 +506,7 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
                 Idstring("units/pd2_dlc_rvd/characters/ene_la_cop_4/ene_la_cop_4")
             }
 
-        elseif difficulty_index <= 4 then
+        elseif difficulty_index <= 4 and not is_classic then
             self.unit_categories.RECON_light.unit_types.america = {
                 Idstring("units/pd2_dlc_rvd/characters/ene_la_cop_3/ene_la_cop_3"),
                 Idstring("units/pd2_dlc_rvd/characters/ene_la_cop_4/ene_la_cop_4")
@@ -383,9 +518,19 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
             }
         end
 
+        self.unit_categories.RECON_police_light.unit_types.america = {
+            Idstring("units/pd2_dlc_rvd/characters/ene_la_cop_1/ene_la_cop_1"),
+            Idstring("units/pd2_dlc_rvd/characters/ene_la_cop_2/ene_la_cop_2")
+        }
+
+        self.unit_categories.RECON_police_heavy.unit_types.america = {
+            Idstring("units/pd2_dlc_rvd/characters/ene_la_cop_3/ene_la_cop_3"),
+            Idstring("units/pd2_dlc_rvd/characters/ene_la_cop_4/ene_la_cop_4")
+        }
+
     elseif heist_type and heist_type == "sanfran" then
         --san francisco cops for the city of light heists
-        if difficulty_index <= 2 then
+        if difficulty_index <= 2 or (difficulty_index == 3 and is_classic) then
             self.unit_categories.RECON_light.unit_types.america = {
                 Idstring("units/pd2_dlc_chas/characters/ene_male_chas_police_01/ene_male_chas_police_01"),
                 Idstring("units/pd2_dlc_chas/characters/ene_male_chas_police_02/ene_male_chas_police_02")
@@ -396,7 +541,7 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
                 Idstring("units/pd2_dlc_chas/characters/ene_male_chas_police_02/ene_male_chas_police_02")
             }
 
-        elseif difficulty_index <= 4 then
+        elseif difficulty_index <= 4 and not is_classic then
             self.unit_categories.RECON_light.unit_types.america = {
                 Idstring("units/pd2_dlc_chas/characters/ene_male_chas_police_01/ene_male_chas_police_01"),
                 Idstring("units/pd2_dlc_chas/characters/ene_male_chas_police_02/ene_male_chas_police_02")
@@ -407,12 +552,32 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
                 Idstring("units/payday2/characters/ene_fbi_3/ene_fbi_3")
             }
         end
+        self.unit_categories.RECON_police_light.unit_types.america = {
+            Idstring("units/pd2_dlc_chas/characters/ene_male_chas_police_01/ene_male_chas_police_01"),
+            Idstring("units/pd2_dlc_chas/characters/ene_male_chas_police_02/ene_male_chas_police_02")
+        }
+
+        self.unit_categories.RECON_police_heavy.unit_types.america = {
+            Idstring("units/pd2_dlc_chas/characters/ene_male_chas_police_01/ene_male_chas_police_01"),
+            Idstring("units/pd2_dlc_chas/characters/ene_male_chas_police_02/ene_male_chas_police_02")
+        }
     end
 end)
 
 Hooks:PostHook(GroupAITweakData, "_init_enemy_spawn_groups", "star_recon_init_enemy_spawn_groups", function(self, difficulty_index)
-    self._tactics.recon_rescue = {
+    self._tactics.recon_case = {
         "ranged_fire",
+        "provide_coverfire",
+        "provide_support",
+        "flank"
+    }
+    self._tactics.recon_rescue = {
+        "provide_coverfire",
+        "provide_support",
+        "flank"
+    }
+    self._tactics.recon_rescue_leader = {
+        "charge",
         "provide_coverfire",
         "provide_support",
         "flank"
@@ -421,10 +586,11 @@ Hooks:PostHook(GroupAITweakData, "_init_enemy_spawn_groups", "star_recon_init_en
         "charge",
         "provide_coverfire",
         "provide_support",
-        "deathguard"
+        "deathguard",
+        "murder"
     }
 
-    self.enemy_spawn_groups.tac_recon_rescue = {
+    self.enemy_spawn_groups.tac_recon_case = {
         amount = {
             3,
             5
@@ -436,7 +602,7 @@ Hooks:PostHook(GroupAITweakData, "_init_enemy_spawn_groups", "star_recon_init_en
                 amount_max = 4,
                 rank = 2,
                 unit = "RECON_light",
-                tactics = self._tactics.recon_rescue
+                tactics = self._tactics.recon_case
             },
             {
                 amount_min = 1,
@@ -444,6 +610,38 @@ Hooks:PostHook(GroupAITweakData, "_init_enemy_spawn_groups", "star_recon_init_en
                 amount_max = 2,
                 rank = 3,
                 unit = "RECON_heavy",
+                tactics = self._tactics.recon_case
+            }
+        }
+    }
+    self.enemy_spawn_groups.tac_recon_rescue = {
+        amount = {
+            4,
+            4
+        },
+        spawn = {
+            {
+                amount_min = 1,
+                freq = 1,
+                amount_max = 1,
+                rank = 3,
+                unit = "RECON_heavy",
+                tactics = self._tactics.recon_rescue_leader
+            },
+            {
+                amount_min = 0,
+                freq = 0.5,
+                amount_max = 1,
+                rank = 2,
+                unit = "RECON_heavy",
+                tactics = self._tactics.recon_rescue
+            },
+            {
+                amount_min = 2,
+                freq = 1,
+                amount_max = 3,
+                rank = 1,
+                unit = "RECON_light",
                 tactics = self._tactics.recon_rescue
             }
         }
@@ -473,6 +671,168 @@ Hooks:PostHook(GroupAITweakData, "_init_enemy_spawn_groups", "star_recon_init_en
             }
         }
     }
+
+    self.enemy_spawn_groups.tac_recon_police = {
+        amount = {
+            3,
+            4
+        },
+        spawn = {
+            {
+                amount_min = 2,
+                freq = 2,
+                amount_max = 3,
+                rank = 2,
+                unit = "RECON_police_light",
+                tactics = self._tactics.recon_case
+            },
+            {
+                amount_min = 1,
+                freq = 1.25,
+                amount_max = 1,
+                rank = 3,
+                unit = "RECON_police_heavy",
+                tactics = self._tactics.recon_case
+            }
+        }
+    }
+
+    self.enemy_spawn_groups.tac_recon_swats = {
+        amount = {
+            3,
+            3
+        },
+        spawn = {
+            {
+                amount_min = 2,
+                freq = 1,
+                amount_max = 3,
+                rank = 1,
+                unit = "RECON_swat_smg",
+                tactics = self._tactics.recon_rescue
+            },
+            {
+                amount_min = 0,
+                freq = 1,
+                amount_max = 1,
+                rank = 2,
+                unit = "RECON_swat_smg",
+                tactics = self._tactics.recon_rescue_leader
+            },
+            {
+                amount_min = 0,
+                freq = 0.5,
+                amount_max = 1,
+                rank = 2,
+                unit = "RECON_swat_smg",
+                tactics = self._tactics.recon_rush
+            },
+            {
+                amount_min = 0,
+                freq = 0.5,
+                amount_max = 1,
+                rank = 2,
+                unit = "RECON_swat_shotty",
+                tactics = self._tactics.recon_rush
+            }
+        }
+    }
+    self.enemy_spawn_groups.tac_reenforce_2lights = {
+        amount = {
+            2,
+            2
+        },
+        spawn = {
+            {
+                amount_min = 2,
+                freq = 1,
+                amount_max = 2,
+                rank = 1,
+                unit = "RECON_light",
+                tactics = self._tactics.recon_case
+            }
+        }
+    }
+    self.enemy_spawn_groups.tac_reenforce_1heavy = {
+        amount = {
+            1,
+            1
+        },
+        spawn = {
+            {
+                amount_min = 1,
+                freq = 1,
+                amount_max = 1,
+                rank = 2,
+                unit = "RECON_heavy",
+                tactics = self._tactics.recon_case
+            }
+        }
+    }
+    self.enemy_spawn_groups.tac_reenforce_2heavies = {
+        amount = {
+            2,
+            2
+        },
+        spawn = {
+            {
+                amount_min = 2,
+                freq = 1,
+                amount_max = 2,
+                rank = 2,
+                unit = "RECON_heavy",
+                tactics = self._tactics.recon_rush
+            }
+        }
+    }
+    self.enemy_spawn_groups.tac_reenforce_team = {
+        amount = {
+            3,
+            3
+        },
+        spawn = {
+            {
+                amount_min = 2,
+                freq = 1,
+                amount_max = 2,
+                rank = 1,
+                unit = "RECON_light",
+                tactics = self._tactics.recon_rescue
+            },
+            {
+                amount_min = 1,
+                freq = 1,
+                amount_max = 1,
+                rank = 2,
+                unit = "RECON_heavy",
+                tactics = self._tactics.recon_rescue_leader
+            }
+        }
+    }
+    self.enemy_spawn_groups.tac_reenforce_police = {
+        amount = {
+            2,
+            2
+        },
+        spawn = {
+            {
+                amount_min = 1,
+                freq = 1.5,
+                amount_max = 2,
+                rank = 1,
+                unit = "RECON_police_light",
+                tactics = self._tactics.recon_case
+            },
+            {
+                amount_min = 1,
+                freq = 1,
+                amount_max = 2,
+                rank = 1,
+                unit = "RECON_police_heavy",
+                tactics = self._tactics.recon_case
+            }
+        }
+    }
 end)
 
 Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data", function(self, difficulty_index, difficulty)
@@ -490,8 +850,8 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
         10
     }
 
-    heist_type = getHeistType()
-    if heist_type and heist_type == "fbi" then
+    local heist_type = getHeistType()
+    if heist_type == "fbi" then
         -- more units if attacking fbi building
         self.besiege.recon.force = {
             4,
@@ -501,15 +861,20 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
     end
 
     self.besiege.recon.groups = {
-        tac_recon_rescue = {
+        tac_recon_case = {
             1,
-            0.8,
-            0.6
+            0.6,
+            0.3
         },
+        tac_recon_rescue = {
+            0,
+            0.3,
+            0.4
+        }
         tac_recon_rush = {
             0,
-            0.2,
-            0.4
+            0.1,
+            0.3
         },
         single_spooc = {
             0,
@@ -521,7 +886,253 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
             0,
             0
         }
+
     }
+    
+    if StarReconMenu then
+        reenforce_valid = (StarReconMenu._data.assault_behaviour and StarReconMenu._data.assault_behaviour > 1)
+        --reenforce
+        if reenforce_valid then
+            self.besiege.reenforce.groups = {
+                tac_reenforce_2lights = {
+                    0.6,
+                    0.3,
+                    0
+                },
+                tac_reenforce_1heavy = {
+                    0.4,
+                    0.2,
+                    0
+                },
+                tac_reenforce_2heavies = {
+                    0,
+                    0.2,
+                    0.4
+                },
+                tac_reenforce_team = {
+                    0,
+                    0.3,
+                    0.6
+                }
+            }
+        end
+        --classic enemy set
+        if StarReconMenu._data.enemy_set == 3 then
+            if difficulty_index <= 3 and heist_type ~= "fbi" then
+                --reset groups
+                self.besiege.recon.groups = {
+                    single_spooc = {
+                        0,
+                        0,
+                        0
+                    },
+                    Phalanx = {
+                        0,
+                        0,
+                        0
+                    }
+                }
+                -- remote heists below VH have just swat
+                if heist_type == "remote" then
+                    self.besiege.recon.groups.tac_recon_swats = {
+                        1,
+                        1,
+                        1
+                    }
+                    
+                    if reenforce_valid then
+                        self.besiege.reenforce.groups.tac_recon_swats = {
+                            1,
+                            1,
+                            1
+                        }
+                    end
+                --normal diff
+                elseif difficulty_index <= 2 then
+                    self.besiege.recon.groups.tac_recon_police = {
+                        1,
+                        1,
+                        0
+                    }
+                    self.besiege.recon.groups.tac_recon_swats = {
+                        0,
+                        0,
+                        1
+                    }
+                    if reenforce_valid then
+                        self.besiege.reenforce.groups.tac_reenforce_police = {
+                            1,
+                            1,
+                            0
+                        }
+                        self.besiege.reenforce.groups.tac_recon_swats = {
+                            0,
+                            0,
+                            1
+                        }
+                    end
+                -- hard diff
+                else 
+                    self.besiege.recon.groups.tac_recon_police = {
+                        1,
+                        0.5,
+                        0
+                    }
+                    self.besiege.recon.groups.tac_recon_swats = {
+                        0,
+                        0.5,
+                        1
+                    }
+                    if reenforce_valid then
+                        self.besiege.reenforce.groups.tac_reenforce_police = {
+                            1,
+                            0.5,
+                            0
+                        }
+                        self.besiege.reenforce.groups.tac_recon_swats = {
+                            0,
+                            0.5,
+                            1
+                        }
+                    end
+                end
+            -- vh diff
+            elseif difficulty_index <= 4 then
+                -- final groups
+                self.besiege.recon.groups = {
+                    tac_recon_case = {
+                        0,
+                        0,
+                        0.6
+                    },
+                    tac_recon_rescue = {
+                        0,
+                        0,
+                        0.3
+                    }
+                    tac_recon_rush = {
+                        0,
+                        0,
+                        0.1
+                    },
+                    single_spooc = {
+                        0,
+                        0,
+                        0
+                    },
+                    Phalanx = {
+                        0,
+                        0,
+                        0
+                    }
+                }
+
+                if reenforce_valid then
+                    self.besiege.reenforce.groups = {
+                        tac_reenforce_2lights = {
+                            0,
+                            0,
+                            0.3
+                        },
+                        tac_reenforce_1heavy = {
+                            0,
+                            0,
+                            0.2
+                        },
+                        tac_reenforce_2heavies = {
+                            0,
+                            0,
+                            0.2
+                        },
+                        tac_reenforce_team = {
+                            0,
+                            0,
+                            0.3
+                        }
+                    }
+                end
+                -- remote heists will not have any cops below 0.5 diff. other heists will
+                if heist_type == "remote" then
+                    self.besiege.recon.groups.tac_recon_swats = {
+                        1,
+                        1,
+                        0
+                    }
+                    
+                    if reenforce_valid then
+                        self.besiege.reenforce.groups.tac_recon_swats = {
+                            1,
+                            1,
+                            0
+                        }
+                    end
+                else
+                    self.besiege.recon.groups.tac_recon_police = {
+                        0.5,
+                        0,
+                        0
+                    }
+                    self.besiege.recon.groups.tac_recon_swats = {
+                        0.5,
+                        1,
+                        0
+                    }
+                    if reenforce_valid then
+                        self.besiege.reenforce.groups.tac_reenforce_police = {
+                            0.5,
+                            0,
+                            0
+                        }
+                        self.besiege.reenforce.groups.tac_recon_swats = {
+                            0.5,
+                            1,
+                            0
+                        }
+                    end
+                end
+            else
+                -- add cops and swats to difficulties overkill and above. no cops on remote heists
+                if heist_type == "remote" or heist_type == "fbi" then
+                    self.besiege.recon.groups.tac_recon_swats = {
+                        0.5,
+                        0,
+                        0
+                    }
+                    
+                    if reenforce_valid then
+                        self.besiege.reenforce.groups.tac_recon_swats = {
+                            0.5,
+                            0,
+                            0
+                        }
+                    end
+                else
+                    self.besiege.recon.groups.tac_recon_police = {
+                        0.15,
+                        0,
+                        0
+                    }
+                    self.besiege.recon.groups.tac_recon_swats = {
+                        0.35,
+                        0,
+                        0
+                    }
+                    if reenforce_valid then
+                        self.besiege.reenforce.groups.tac_reenforce_police = {
+                            0.15,
+                            0,
+                            0
+                        }
+                        self.besiege.reenforce.groups.tac_recon_swats = {
+                            0.35,
+                            0,
+                            0
+                        }
+                    end
+                end
+            end
+        end
+    end
     
     -- reclone
     self.street = deep_clone(self.besiege)
