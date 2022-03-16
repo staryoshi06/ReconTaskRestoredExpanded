@@ -108,7 +108,7 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
                     Idstring("units/pd2_dlc_bex/characters/ene_policia_02/ene_policia_02")
                 }
             },
-            access = access_type_all
+            access = access_type_walk_only
         }
 
         self.unit_categories.RECON_heavy = {
@@ -133,7 +133,7 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
                     Idstring("units/pd2_dlc_bex/characters/ene_policia_02/ene_policia_02")
                 }
             },
-            access = access_type_all
+            access = access_type_walk_only
         }
 
     --Hard/Very Hard
@@ -160,7 +160,7 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
                     Idstring("units/pd2_dlc_bex/characters/ene_policia_02/ene_policia_02")
                 }
             },
-            access = access_type_all
+            access = access_type_walk_only
         }
 
         self.unit_categories.RECON_heavy = {
@@ -188,7 +188,7 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
 
                 }
             },
-            access = access_type_all
+            access = access_type_walk_only
         }
 
     --Overkill/Mayhem
@@ -348,44 +348,42 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
     if difficulty_index == 6 or difficulty_index == 7 then
         self.unit_categories.RECON_swat_smg = {
             unit_types = {
-                unit_types = {
-                    america = {
-                        Idstring("units/payday2/characters/ene_city_swat_3/ene_city_swat_3")
-                    },
-                    russia = {
-                        Idstring("units/pd2_dlc_mad/characters/ene_akan_cs_swat_ak47_ass/ene_akan_cs_swat_ak47_ass")
-                    },
-                    zombie = {
-                        Idstring("units/pd2_dlc_hvh/characters/ene_swat_hvh_1/ene_swat_hvh_1")
-                    },
-                    murkywater = {
-                        Idstring("units/pd2_dlc_bph/characters/ene_murkywater_light/ene_murkywater_light")
-                    },
-                    federales = {
-                        Idstring("units/pd2_dlc_bex/characters/ene_swat_policia_federale/ene_swat_policia_federale")
-                    }
+                america = {
+                    Idstring("units/payday2/characters/ene_city_swat_3/ene_city_swat_3")
+                },
+                russia = {
+                    Idstring("units/pd2_dlc_mad/characters/ene_akan_cs_swat_ak47_ass/ene_akan_cs_swat_ak47_ass")
+                },
+                zombie = {
+                    Idstring("units/pd2_dlc_hvh/characters/ene_swat_hvh_1/ene_swat_hvh_1")
+                },
+                murkywater = {
+                    Idstring("units/pd2_dlc_bph/characters/ene_murkywater_light/ene_murkywater_light")
+                },
+                federales = {
+                    Idstring("units/pd2_dlc_bex/characters/ene_swat_policia_federale/ene_swat_policia_federale")
+                }
             },
             access - access_type_all
         }
 
         self.unit_categories.RECON_swat_shotty = {
             unit_types = {
-                unit_types = {
-                    america = {
-                        Idstring("units/payday2/characters/ene_city_swat_2/ene_city_swat_2")
-                    },
-                    russia = {
-                        Idstring("units/pd2_dlc_mad/characters/ene_akan_cs_swat_r870/ene_akan_cs_swat_r870")
-                    },
-                    zombie = {
-                        Idstring("units/pd2_dlc_hvh/characters/ene_swat_hvh_2/ene_swat_hvh_2")
-                    },
-                    murkywater = {
-                        Idstring("units/pd2_dlc_bph/characters/ene_murkywater_light_r870/ene_murkywater_light_r870")
-                    },
-                    federales = {
-                        Idstring("units/pd2_dlc_bex/characters/ene_swat_policia_federale_r870/ene_swat_policia_federale_r870")
-                    }
+                america = {
+                    Idstring("units/payday2/characters/ene_city_swat_2/ene_city_swat_2")
+                },
+                russia = {
+                    Idstring("units/pd2_dlc_mad/characters/ene_akan_cs_swat_r870/ene_akan_cs_swat_r870")
+                },
+                zombie = {
+                    Idstring("units/pd2_dlc_hvh/characters/ene_swat_hvh_2/ene_swat_hvh_2")
+                },
+                murkywater = {
+                    Idstring("units/pd2_dlc_bph/characters/ene_murkywater_light_r870/ene_murkywater_light_r870")
+                },
+                federales = {
+                    Idstring("units/pd2_dlc_bex/characters/ene_swat_policia_federale_r870/ene_swat_policia_federale_r870")
+                }
             },
             access - access_type_all
         }
@@ -398,6 +396,8 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
     -- per level modifications
     heist_type = getHeistType()
     if heist_type and heist_type == "fbi" then
+        self.unit_categories.RECON_light.access = access_type_all
+        self.unit_categories.RECON_heavy.access = access_type_all
         --stronger fbi units
         if difficulty_index <= 2 then
             self.unit_categories.RECON_light.unit_types.america = {
@@ -444,6 +444,8 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
 
     elseif heist_type and heist_type == "remote" then
         --replace cops with fbi units in remote heists. doesn't affect overkill+
+        self.unit_categories.RECON_light.access = access_type_all
+        self.unit_categories.RECON_heavy.access = access_type_all
         if difficulty_index <= 2 then
             self.unit_categories.RECON_light.unit_types.america = {
                 Idstring("units/payday2/characters/ene_fbi_1/ene_fbi_1")
