@@ -27,6 +27,7 @@
                 "assault_condition_never",
                 "assault_condition_hostage",
                 "assault_condition_hostage_loot",
+                "assault_condition_any",
                 "assault_condition_always"
             ],
             "value" : "assault_condition"

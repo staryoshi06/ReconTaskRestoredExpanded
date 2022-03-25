@@ -35,9 +35,9 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
     --check for whether required packages are loaded for murky units. if not, swap out
     --if we don't then host will crash. if we force load packages, clients without mod will not see enemies
     --I don't know the memory cost of checking this unfortunately
-    local murky_scar = nil
-    local murky_c45 = nil
     local murky_ump = nil
+    local murky_c45 = nil
+    local murky_mp5 = nil
 
     --from gamesetup.lua
     local lvl_tweak_data = tweak_data_ref and Global.level_data and Global.level_data.level_id and tweak_data_ref.levels[Global.level_data.level_id]
@@ -45,41 +45,33 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
 
     if type(level_package) == "table" then
         for _, package in ipairs(level_package) do
-            if not murky_scar and (package == "packages/job_mex" or package == "packages/job_mex2" or package == "packages/job_des") then
-                murky_scar = Idstring("units/pd2_dlc_des/characters/ene_murkywater_not_security_2/ene_murkywater_not_security_2")
-            end
-    
-            if not murky_c45 and (murky_scar or (package == "packages/narr_jerry1" or package == "packages/dlcs/vit/job_vit")) then
+            -- i don't feel like making a table so this bad if statement will have to do
+            -- i can't just say if not job_bph because custom packages from custom heists would crash
+            if not murky_c45 and (package == "packages/narr_jerry1" or package == "packages/dlcs/vit/job_vit" or package == "packages/job_mex" or package == "packages/job_mex2" or package == "packages/job_des") then
                 murky_c45 = Idstring("units/pd2_dlc_vit/characters/ene_murkywater_secret_service/ene_murkywater_secret_service")
             end
     
-            if not murky_ump and (murky_scar or murky_c45 or package == "packages/dlcs/bph/job_bph") then
+            if not murky_ump and (murky_c45 or package == "packages/dlcs/bph/job_bph") then
                 murky_ump = Idstring("units/pd2_dlc_des/characters/ene_murkywater_no_light_not_security/ene_murkywater_no_light_not_security")
             end
         end
     else
-        if level_package and (level_package == "packages/job_mex" or level_package == "packages/job_mex2" or level_package == "packages/job_des") then
-            murky_scar = Idstring("units/pd2_dlc_des/characters/ene_murkywater_not_security_2/ene_murkywater_not_security_2")
-        end
-
-        if murky_scar or (level_package and (level_package == "packages/narr_jerry1" or level_package == "packages/dlcs/vit/job_vit")) then
+        if (level_package and (level_package == "packages/narr_jerry1" or level_package == "packages/dlcs/vit/job_vit" or level_package == "packages/job_mex" or level_package == "packages/job_mex2" or level_package == "packages/job_des")) then
             murky_c45 = Idstring("units/pd2_dlc_vit/characters/ene_murkywater_secret_service/ene_murkywater_secret_service")
         end
 
-        if murky_scar or murky_c45 or (level_package and level_package == "packages/dlcs/bph/job_bph") then
+        if murky_c45 or (level_package and level_package == "packages/dlcs/bph/job_bph") then
             murky_ump = Idstring("units/pd2_dlc_des/characters/ene_murkywater_no_light_not_security/ene_murkywater_no_light_not_security")
         end
     end
 
+    murky_mp5 = Idstring("units/pd2_dlc_bph/characters/ene_murkywater_light/ene_murkywater_light")
+    
     if not murky_ump then
-        --account for custom packages
-        murky_ump = Idstring("units/pd2_dlc_bph/characters/ene_murkywater_light/ene_murkywater_light")
-    end
-    if not murky_scar then
-        murky_scar = murky_ump
+        murky_ump = murky_mp5
     end
     if not murky_c45 then
-        murky_c45 = murky_ump
+        murky_c45 = murky_mp5
     end
 
     is_classic = StarReconMenu and StarReconMenu._data.enemy_set == 3
@@ -179,7 +171,7 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
 
                 },
                 murkywater = {
-                    murky_ump
+                    murky_mp5
 
                 },
                 federales = {
@@ -209,7 +201,7 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
                 },
                 murkywater = {
                     murky_c45,
-                    murky_ump
+                    murky_mp5
                 },
                 federales = {
                     Idstring("units/payday2/characters/ene_fbi_1/ene_fbi_1"),
@@ -234,8 +226,8 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
                     Idstring("units/pd2_dlc_hvh/characters/ene_fbi_hvh_2/ene_fbi_hvh_2")
                 },
                 murkywater = {
-                    murky_ump,
-                    murky_scar
+                    murky_mp5,
+                    murky_ump
                 },
                 federales = {
                     Idstring("units/payday2/characters/ene_fbi_3/ene_fbi_3"),
@@ -261,7 +253,7 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
                     Idstring("units/pd2_dlc_hvh/characters/ene_fbi_hvh_3/ene_fbi_hvh_3")
                 },
                 murkywater = {
-                    murky_ump
+                    murky_mp5
                 },
                 federales = {
                     Idstring("units/payday2/characters/ene_fbi_3/ene_fbi_3")
@@ -283,7 +275,7 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
                     Idstring("units/pd2_dlc_hvh/characters/ene_fbi_hvh_2/ene_fbi_hvh_2")
                 },
                 murkywater = {
-                    murky_scar
+                    murky_ump
                 },
                 federales = {
                     Idstring("units/payday2/characters/ene_fbi_2/ene_fbi_2")
@@ -364,7 +356,7 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
                     Idstring("units/pd2_dlc_bex/characters/ene_swat_policia_federale/ene_swat_policia_federale")
                 }
             },
-            access - access_type_all
+            access = access_type_all
         }
 
         self.unit_categories.RECON_swat_shotty = {
@@ -385,7 +377,7 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
                     Idstring("units/pd2_dlc_bex/characters/ene_swat_policia_federale_r870/ene_swat_policia_federale_r870")
                 }
             },
-            access - access_type_all
+            access = access_type_all
         }
     else
         self.unit_categories.RECON_swat_smg = self.unit_categories.CS_swat_MP5
@@ -872,7 +864,7 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
             0,
             0.3,
             0.4
-        }
+        },
         tac_recon_rush = {
             0,
             0.1,
@@ -888,11 +880,10 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
             0,
             0
         }
-
     }
     
     if StarReconMenu then
-        reenforce_valid = (StarReconMenu._data.assault_behaviour and StarReconMenu._data.assault_behaviour > 1)
+        local reenforce_valid = (StarReconMenu._data.assault_behaviour and StarReconMenu._data.assault_behaviour > 1)
         --reenforce
         if reenforce_valid then
             self.besiege.reenforce.groups = {
@@ -915,6 +906,16 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
                     0,
                     0.3,
                     0.6
+                },
+                single_spooc = {
+                    0,
+                    0,
+                    0
+                },
+                Phalanx = {
+                    0,
+                    0,
+                    0
                 }
             }
         end
@@ -934,6 +935,20 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
                         0
                     }
                 }
+                if reenforce_valid then 
+                    self.besiege.reenforce.groups = {
+                        single_spooc = {
+                            0,
+                            0,
+                            0
+                        },
+                        Phalanx = {
+                            0,
+                            0,
+                            0
+                        }
+                    }
+                end
                 -- remote heists below VH have just swat
                 if heist_type == "remote" then
                     self.besiege.recon.groups.tac_recon_swats = {
@@ -1011,7 +1026,7 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
                         0,
                         0,
                         0.3
-                    }
+                    },
                     tac_recon_rush = {
                         0,
                         0,
@@ -1050,6 +1065,16 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
                             0,
                             0,
                             0.3
+                        },
+                        single_spooc = {
+                            0,
+                            0,
+                            0
+                        },
+                        Phalanx = {
+                            0,
+                            0,
+                            0
                         }
                     }
                 end

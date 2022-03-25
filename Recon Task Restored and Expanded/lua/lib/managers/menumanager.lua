@@ -18,6 +18,9 @@ function StarReconMenu:Load()
 		self._data = json.decode( file:read("*all") )
 		file:close()
 	end
+    if not StarReconMenu._data.enemy_set then StarReconMenu._data.enemy_set = 1 end
+    if not StarReconMenu._data.assault_condition then StarReconMenu._data.assault_condition = 1 end
+    if not StarReconMenu._data.assault_behaviour then StarReconMenu._data.assault_behaviour = 1 end
 end
 
 Hooks:Add("LocalizationManagerPostInit", "star_recon_localise_menu", function( loc )
