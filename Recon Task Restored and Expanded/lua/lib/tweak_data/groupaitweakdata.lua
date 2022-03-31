@@ -1,13 +1,14 @@
 local tweak_data_ref = nil
+local data_path = ModPath .. "menu/settings.json"
 
-function getHeistType()
+function GroupAITweakData:getHeistType()
     local level_id = Global.level_data and Global.level_data.level_id -- referenced from Assault Tweaks Standalone
 
     if not level_id then
         return nil
     elseif level_id == "firestarter_2" or level_id == "hox_2" or level_id == "hox_3" then
         return "fbi"
-    elseif level_id == "welcome_to_the_jungle_2" or level_id == "chew" or level_id == "chca" or level_id == "bph" or (StarReconMenu and StarReconMenu._data.enemy_set == 2) then
+    elseif level_id == "welcome_to_the_jungle_2" or level_id == "chew" or level_id == "chca" or level_id == "bph" or (self.rtre_menu_data and self.rtre_menu_data.enemy_set == 2) then
         return "remote"
     elseif level_id == "rvd1" or level_id == "rvd2" then
         return "la"
@@ -20,6 +21,16 @@ end
 
 Hooks:PreHook(GroupAITweakData, "init", "star_recon_init_groupaitweakdata", function(self, tweak_data)
     tweak_data_ref = tweak_data
+    self.rtre_menu_data = {}
+    -- get menu data
+    local file = io.open( data_path, "r" )
+    if file then
+        self.rtre_menu_data = json.decode( file:read("*all") )
+        file:close()
+    end
+    if not self.rtre_menu_data.enemy_set then self.rtre_menu_data.enemy_set = 1 end
+    if not self.rtre_menu_data.assault_condition then self.rtre_menu_data.assault_condition = 1 end
+    if not self.rtre_menu_data.assault_behaviour then self.rtre_menu_data.assault_behaviour = 1 end
 end)
 
 --Define recon units and add to original
@@ -74,7 +85,7 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
         murky_c45 = murky_mp5
     end
 
-    is_classic = StarReconMenu and StarReconMenu._data.enemy_set == 3
+    local is_classic = self.rtre_menu_data and self.rtre_menu_data.enemy_set == 3
 
     --Normal
     if difficulty_index <= 2 then
@@ -386,7 +397,7 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
     end
 
     -- per level modifications
-    heist_type = getHeistType()
+    heist_type = self:getHeistType()
     if heist_type and heist_type == "fbi" then
         self.unit_categories.RECON_light.access = access_type_all
         self.unit_categories.RECON_heavy.access = access_type_all
@@ -844,7 +855,7 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
         10
     }
 
-    local heist_type = getHeistType()
+    local heist_type = self:getHeistType()
     if heist_type == "fbi" then
         -- more units if attacking fbi building
         self.besiege.recon.force = {
@@ -882,8 +893,8 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
         }
     }
     
-    if StarReconMenu then
-        local reenforce_valid = (StarReconMenu._data.assault_behaviour and StarReconMenu._data.assault_behaviour > 1)
+    if self.rtre_menu_data then
+        local reenforce_valid = (self.rtre_menu_data.assault_behaviour and self.rtre_menu_data.assault_behaviour > 1)
         --reenforce
         if reenforce_valid then
             self.besiege.reenforce.groups = {
@@ -920,7 +931,7 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
             }
         end
         --classic enemy set
-        if StarReconMenu._data.enemy_set == 3 then
+        if self.rtre_menu_data.enemy_set == 3 then
             if difficulty_index <= 3 and heist_type ~= "fbi" then
                 --reset groups
                 self.besiege.recon.groups = {

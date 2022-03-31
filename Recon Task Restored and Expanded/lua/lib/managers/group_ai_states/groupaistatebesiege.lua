@@ -98,23 +98,33 @@ function GroupAIStateBesiege:_begin_new_tasks()
     local t = self._t
     local reenforce_candidates = nil
     local reenforce_data = task_data.reenforce
+    
+    local check_loot, check_valid_objs = nil
+    if self._recon_assault_condition then
+        if self._recon_assault_condition == 3 then
+            check_loot = true
+            if not self._task_data.recon.next_lootcheck_t then
+                self._task_data.recon.next_lootcheck_t = t + 10
+            end
+        elseif self._recon_assault_behaviour and (self._recon_assault_behaviour == 2 or self._recon_assault_behaviour == 3) and self._recon_assault_condition == 4  then
+            check_valid_objs = true
+            if not self._task_data.recon.next_objcheck_t then
+                self._task_data.recon.next_objcheck_t = t + 10
+            end
+        end
+    end
 
-    if reenforce_data.next_dispatch_t and reenforce_data.next_dispatch_t < t then
+    if reenforce_data.next_dispatch_t and reenforce_data.next_dispatch_t < t and ((not self._reenforce_valid) or self:is_reenforce_allowed()) then
         reenforce_candidates = {}
     end
 
     local recon_candidates, are_recon_candidates_safe = nil
     local recon_data = task_data.recon
-    recon_data.valid_recon_objectives = nil -- for condition 4 if behaviour 2 or 3
-    -- only retire after 10 seconds of no loot to account for players picking up and dropping loot
-    if recon_data.next_lootcheck_t and recon_data.next_lootcheck_t < t then
-        recon_data.loot_present = nil
-    end
 
     -- new recon condition
     if recon_data.next_dispatch_t and recon_data.next_dispatch_t < t and not task_data.regroup.active and (not task_data.assault.active or (self._goin_valid and self:is_recon_allowed())) then
         recon_candidates = {}
-    elseif self._task_data.assault.active and recon_data.next_dispatch_t and recon_data.next_dispatch_t < t then
+    elseif self._task_data.assault.active and self._task_data.recon.tasks[1] and recon_data.next_dispatch_t and recon_data.next_dispatch_t < t and not self:is_recon_allowed() then
         self._task_data.recon.tasks = {}
     end
 
@@ -126,6 +136,27 @@ function GroupAIStateBesiege:_begin_new_tasks()
     end
 
     if not reenforce_candidates and not recon_candidates and not assault_candidates then
+        -- if necessary check for loot or valid recon objectives
+        if check_loot and recon_data.next_lootcheck_t and recon_data.next_lootcheck_t < t then
+            recon_data.loot_present = nil
+            recon_data.next_lootcheck_t = t + 10
+            for area_id, area in pairs(all_areas) do
+                if area.loot then
+                    recon_data.loot_present = true
+                    break
+                end
+            end
+        end
+        if check_valid_objs and recon_data.next_objcheck_t and recon_data.next_objcheck_t < t then
+            recon_data.valid_recon_objectives = nil
+            recon_data.next_objcheck_t = t + 10
+            for area_id, area in pairs(all_areas) do
+                if area.loot or area.hostages then
+                    recon_data.valid_recon_objectives = true
+                    break
+                end
+            end
+        end
         return
     end
 
@@ -252,13 +283,13 @@ function GroupAIStateBesiege:_begin_new_tasks()
             end
         end
 
-        if area.loot then
+        if check_loot and area.loot then
             recon_data.loot_present = true
             recon_data.next_lootcheck_t = t + 10
         end
-        end
-        if area.loot or area.hostages then
+        if check_valid_objs and (area.loot or area.hostages) then
             recon_data.valid_recon_objectives = true
+            recon_data.next_objcheck_t = t + 10
         end
 
         i = i + 1
@@ -270,8 +301,11 @@ function GroupAIStateBesiege:_begin_new_tasks()
 
     --prevent cheese tactic, if no recon objectives or tasks and assault break is extended, or recon is set to appear always, then set task on the player
     if recon_candidates and not recon_candidates[1] and not recon_data.tasks[1] and (recon_data.break_extended or self._recon_assault_condition == 5) then
-        for _, area in pairs(to_search_areas) do
-            if criminal_character_in_area then
+        for criminal_key, criminal_data in pairs(self._char_criminals) do
+            if not criminal_data.status then
+                local nav_seg = criminal_data.tracker:nav_segment()
+                local area = self:get_area_from_nav_seg_id(nav_seg)
+
                 table.insert(recon_candidates, area)
             end
         end
@@ -318,11 +352,15 @@ function GroupAIStateBesiege:_upd_recon_tasks()
 
     self:_assign_enemy_groups_to_recon()
 
+    local t = self._t
+
     if not task_data then
+        --sometimes next dispatch is set to nil and then the tasks are cleared. unsure how but this should fix it
+        if not self._task_data.recon.next_dispatch_t then
+            self._task_data.recon.next_dispatch_t = t
+        end
         return
     end
-
-    local t = self._t
 
     local nr_wanted = 0
     local target_pos = task_data.target_area.pos
@@ -331,9 +369,9 @@ function GroupAIStateBesiege:_upd_recon_tasks()
         -- removed assault groups retiring
 
         -- limit recon to both assault and recon spawn limits.
-        local nr_wanted_recon = (self:_get_difficulty_dependent_value(self._tweak_data.recon.force)/2) - self:_count_recon_force()
+        local nr_wanted_recon = (math.ceil(self:_get_difficulty_dependent_value(self._tweak_data.recon.force)/2)) - self:_count_recon_force()
         local nr_wanted_assault = self._task_data.assault.force - self:_count_police_force("assault") - (self._task_data.assault.phase == "anticipation" and 5 or 0)
-        local nr_wanted = nr_wanted_assault < nr_wanted_recon and nr_wanted_assault or nr_wanted_recon
+        nr_wanted = nr_wanted_assault < nr_wanted_recon and nr_wanted_assault or nr_wanted_recon
         if self._task_data.assault.phase == "fade" then
             nr_wanted = 0
         end
@@ -341,8 +379,6 @@ function GroupAIStateBesiege:_upd_recon_tasks()
         self:_assign_assault_groups_to_retire()
         nr_wanted = self:_get_difficulty_dependent_value(self._tweak_data.recon.force) - self:_count_police_force("recon")
     end 
-
-        
 
     if nr_wanted <= 0 then
         return
@@ -422,6 +458,13 @@ function GroupAIStateBesiege:_assign_recon_groups_to_retire()
     old_retire_recon(self)
 end
 
+-- There's no reason for this to be setting the next dispatch, as upd_reenforce_tasks sets it already
+Hooks:PostHook(GroupAIStateBesiege, "_begin_reenforce_task", "star_recon_begin_reenforce_task", function(self, reenforce_area)
+    if self._reenforce_valid then
+        self._task_data.reenforce.next_dispatch_t = self._t - 1 --Because in order for this to execute the value would have had to be at least this
+    end
+end)
+
 --if adding reenforce then we only run this if they are allowed. otherwise run as normal for compatibility
 local old_upd_reenforce_tasks = GroupAIStateBesiege._upd_reenforce_tasks
 function GroupAIStateBesiege:_upd_reenforce_tasks() 
@@ -440,7 +483,7 @@ function GroupAIStateBesiege:_upd_reenforce_tasks()
                         group.objective.type = "recon_area"
                         self:_set_recon_objective_to_group(group)
                         --If too far away then just retire
-                        if mvector3.distance(group.objective.target_area.pos, group.objective.area.pos) > 5000 and not self._task_data.assault.active then
+                        if not group.objective.target_area or not group.objective.area or (mvector3.distance(group.objective.target_area.pos, group.objective.area.pos) > 5000 and not self._task_data.assault.active) then
                             self:_assign_group_to_retire(group)
                         end
                     else

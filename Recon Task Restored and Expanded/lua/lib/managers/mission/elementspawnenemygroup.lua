@@ -13,6 +13,7 @@ Hooks:PostHook(ElementSpawnEnemyGroup, "init", "star_recon_init_spawn_group_elem
                 table.insert(groups, "tac_reenforce_1heavy")
                 table.insert(groups, "tac_reenforce_2heavies")
                 table.insert(groups, "tac_reenforce_team")
+                table.insert(groups, "tac_reenforce_police")
                 break
             end
         end

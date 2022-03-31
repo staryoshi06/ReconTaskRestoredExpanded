@@ -27,7 +27,7 @@
 		{
 			"hook_id" : "lib/managers/menumanager",
 			"script_path" : "lua/lib/managers/menumanager.lua"
-		},
+		}
 	],
 	"updates" :
 	[
