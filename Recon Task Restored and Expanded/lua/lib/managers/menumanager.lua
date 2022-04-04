@@ -19,6 +19,8 @@ function StarReconMenu:Load()
 		file:close()
 	end
     if not StarReconMenu._data.enemy_set then StarReconMenu._data.enemy_set = 1 end
+    if not StarReconMenu._data.murky_set then StarReconMenu._data.murky_set = 1 end
+    if not StarReconMenu._data.bronco_guy then StarReconMenu._data.bronco_guy = false end
     if not StarReconMenu._data.assault_condition then StarReconMenu._data.assault_condition = 1 end
     if not StarReconMenu._data.assault_behaviour then StarReconMenu._data.assault_behaviour = 1 end
 end
@@ -31,6 +33,16 @@ Hooks:Add( "MenuManagerInitialize", "star_recon_init_menu", function( menu_manag
     MenuCallbackHandler.clbk_recon_enemy_set = function(self, item)
        StarReconMenu._data.enemy_set = item:value()
        StarReconMenu:Save()
+    end
+
+    MenuCallbackHandler.clbk_recon_murky_set = function(self, item)
+        StarReconMenu._data.murky_set = item:value()
+        StarReconMenu:Save()
+    end
+
+    MenuCallbackHandler.clbk_recon_bronco_guy = function(self, item)
+        StarReconMenu._data.bronco_guy = (item:value() == "on" and true or false)
+        StarReconMenu:Save()
     end
 
     MenuCallbackHandler.clbk_recon_assault_condition = function(self, item)

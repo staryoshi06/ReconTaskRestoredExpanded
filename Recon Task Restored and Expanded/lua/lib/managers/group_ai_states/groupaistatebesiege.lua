@@ -44,7 +44,7 @@ Hooks:PostHook(GroupAIStateBesiege, "init", "star_recon_ai_state_besiege_init", 
     local menu_exists = (StarReconMenu and StarReconMenu._data.assault_behaviour and StarReconMenu._data.assault_condition)
     -- These are for checking whether the appropriate functions should be called, to save on overhead if they aren't needed
     self._goin_valid =  menu_exists and StarReconMenu._data.assault_behaviour ~= 2  and StarReconMenu._data.assault_condition > 1
-    self._reenforce_valid = menu_exists and ((StarReconMenu._data.assault_behaviour == 2 and StarReconMenu._data.assault_condition > 1) or StarReconMenu._data.assault_behaviour > 2)
+    self._reenforce_valid = menu_exists and StarReconMenu._data.assault_behaviour > 1
     -- I could make settings changeable during a heist but that could damage performance if extra functions are being called so frequently, so I'd rather not
     -- Instead, we're setting it in stone at heist start.
     -- If enough people request it I might make it an option
@@ -104,12 +104,12 @@ function GroupAIStateBesiege:_begin_new_tasks()
         if self._recon_assault_condition == 3 then
             check_loot = true
             if not self._task_data.recon.next_lootcheck_t then
-                self._task_data.recon.next_lootcheck_t = t + 10
+                self._task_data.recon.next_lootcheck_t = t
             end
-        elseif self._recon_assault_behaviour and (self._recon_assault_behaviour == 2 or self._recon_assault_behaviour == 3) and self._recon_assault_condition == 4  then
+        elseif self._recon_assault_condition == 4 and self._recon_assault_behaviour and (self._recon_assault_behaviour == 2 or self._recon_assault_behaviour == 3)  then
             check_valid_objs = true
             if not self._task_data.recon.next_objcheck_t then
-                self._task_data.recon.next_objcheck_t = t + 10
+                self._task_data.recon.next_objcheck_t = t
             end
         end
     end

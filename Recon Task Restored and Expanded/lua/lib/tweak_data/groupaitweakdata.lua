@@ -8,7 +8,7 @@ function GroupAITweakData:getHeistType()
         return nil
     elseif level_id == "firestarter_2" or level_id == "hox_2" or level_id == "hox_3" then
         return "fbi"
-    elseif level_id == "welcome_to_the_jungle_2" or level_id == "chew" or level_id == "chca" or level_id == "bph" or (self.rtre_menu_data and self.rtre_menu_data.enemy_set == 2) then
+    elseif level_id == "welcome_to_the_jungle_2" or level_id == "chew" or level_id == "chca" or (self.rtre_menu_data and self.rtre_menu_data.enemy_set == 2) then
         return "remote"
     elseif level_id == "rvd1" or level_id == "rvd2" then
         return "la"
@@ -29,6 +29,8 @@ Hooks:PreHook(GroupAITweakData, "init", "star_recon_init_groupaitweakdata", func
         file:close()
     end
     if not self.rtre_menu_data.enemy_set then self.rtre_menu_data.enemy_set = 1 end
+    if not self.rtre_menu_data.murky_set then self.rtre_menu_data.murky_set = 1 end
+    if not self.rtre_menu_data.bronco_guy then self.rtre_menu_data.bronco_guy = false end
     if not self.rtre_menu_data.assault_condition then self.rtre_menu_data.assault_condition = 1 end
     if not self.rtre_menu_data.assault_behaviour then self.rtre_menu_data.assault_behaviour = 1 end
 end)
@@ -46,6 +48,7 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
     --check for whether required packages are loaded for murky units. if not, swap out
     --if we don't then host will crash. if we force load packages, clients without mod will not see enemies
     --I don't know the memory cost of checking this unfortunately
+    local murky_scar = nil
     local murky_ump = nil
     local murky_c45 = nil
     local murky_mp5 = nil
@@ -58,7 +61,11 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
         for _, package in ipairs(level_package) do
             -- i don't feel like making a table so this bad if statement will have to do
             -- i can't just say if not job_bph because custom packages from custom heists would crash
-            if not murky_c45 and (package == "packages/narr_jerry1" or package == "packages/dlcs/vit/job_vit" or package == "packages/job_mex" or package == "packages/job_mex2" or package == "packages/job_des") then
+            if not murky scar and (package == "packages/job_mex" or package == "packages/job_mex2" or package == "packages/job_des") then
+                murky_scar = Idstring("units/pd2_dlc_des/characters/ene_murkywater_not_security_2/ene_murkywater_not_security_2")
+            end
+
+            if not murky_c45 and (murky_scar or package == "packages/narr_jerry1" or package == "packages/dlcs/vit/job_vit") then
                 murky_c45 = Idstring("units/pd2_dlc_vit/characters/ene_murkywater_secret_service/ene_murkywater_secret_service")
             end
     
@@ -67,7 +74,11 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
             end
         end
     else
-        if (level_package and (level_package == "packages/narr_jerry1" or level_package == "packages/dlcs/vit/job_vit" or level_package == "packages/job_mex" or level_package == "packages/job_mex2" or level_package == "packages/job_des")) then
+        if level_package and (level_package == "packages/job_mex" or level_package == "packages/job_mex2" or level_package == "packages/job_des") then
+            murky_scar = Idstring("units/pd2_dlc_des/characters/ene_murkywater_not_security_2/ene_murkywater_not_security_2")
+        end
+
+        if murky_scar or (level_package and (level_package == "packages/narr_jerry1" or level_package == "packages/dlcs/vit/job_vit")) then
             murky_c45 = Idstring("units/pd2_dlc_vit/characters/ene_murkywater_secret_service/ene_murkywater_secret_service")
         end
 
@@ -83,6 +94,14 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
     end
     if not murky_c45 then
         murky_c45 = murky_mp5
+    end
+
+    -- old murky set
+    if self.rtre_menu_data and self.rtre_menu_data.murky_set == 3 then
+        murky_mp5 = murky_ump
+        if murky_scar then 
+            murky_ump = murky_scar
+        end
     end
 
     local is_classic = self.rtre_menu_data and self.rtre_menu_data.enemy_set == 3
@@ -397,7 +416,7 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
     end
 
     -- per level modifications
-    heist_type = self:getHeistType()
+    local heist_type = self:getHeistType()
     if heist_type and heist_type == "fbi" then
         self.unit_categories.RECON_light.access = access_type_all
         self.unit_categories.RECON_heavy.access = access_type_all
@@ -533,6 +552,11 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
             Idstring("units/pd2_dlc_rvd/characters/ene_la_cop_4/ene_la_cop_4")
         }
 
+        -- don't ask me why the bronco cop is under "mp5" im just savin memory here
+        self.unit_categories.CS_cop_stealth_MP5.unit_types.america = {
+            Idstring("units/pd2_dlc_rvd/characters/ene_la_cop_2/ene_la_cop_2")
+        }
+
     elseif heist_type and heist_type == "sanfran" then
         --san francisco cops for the city of light heists
         if difficulty_index <= 2 or (difficulty_index == 3 and is_classic) then
@@ -566,6 +590,38 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
             Idstring("units/pd2_dlc_chas/characters/ene_male_chas_police_01/ene_male_chas_police_01"),
             Idstring("units/pd2_dlc_chas/characters/ene_male_chas_police_02/ene_male_chas_police_02")
         }
+    end
+
+    --murky set flashlights
+    if murky_scar and self.rtre_menu_data and self.rtre_menu_data.murky_set == 2 then
+        local categories_to_check = {
+            "RECON_light",
+            "RECON_heavy"
+        }
+        local heavy = Idstring("units/pd2_dlc_des/characters/ene_murkywater_no_light_not_security/ene_murkywater_no_light_not_security")
+        local ump = Idstring("units/pd2_dlc_des/characters/ene_murkywater_not_security_1/ene_murkywater_not_security_1")
+
+        for _, cat in pairs(categories_to_check) do
+            local units = self.unit_categories[cat].unit_types.murkywater
+            local heavies = 0
+            local others = {}
+            for k, unit in pairs(units) do
+                if unit == heavy then
+                    heavies = heavies + 1
+                    units[k] = ump
+                else
+                    table.insert(others, unit)
+                end
+            end
+            --double original units to maintain roughly the same presence compared to heavies
+            for _, unit in pairs(others) do
+                table.insert(units, unit)
+            end
+            while heavies > 0 do
+                table.insert(units, murky_scar)
+                heavies = heavies - 1
+            end
+        end
     end
 end)
 
@@ -786,7 +842,7 @@ Hooks:PostHook(GroupAITweakData, "_init_enemy_spawn_groups", "star_recon_init_en
                 amount_max = 2,
                 rank = 2,
                 unit = "RECON_heavy",
-                tactics = self._tactics.recon_rush
+                tactics = self._tactics.recon_rescue
             }
         }
     }
@@ -810,7 +866,7 @@ Hooks:PostHook(GroupAITweakData, "_init_enemy_spawn_groups", "star_recon_init_en
                 amount_max = 1,
                 rank = 2,
                 unit = "RECON_heavy",
-                tactics = self._tactics.recon_rescue_leader
+                tactics = self._tactics.recon_rescue
             }
         }
     }
@@ -838,6 +894,94 @@ Hooks:PostHook(GroupAITweakData, "_init_enemy_spawn_groups", "star_recon_init_en
             }
         }
     }
+    self.enemy_spawn_groups.tac_reenforce_swats = {
+        amount = {
+            2,
+            3
+        },
+        spawn = {
+            {
+                amount_min = 1,
+                freq = 1.5,
+                amount_max = 3,
+                rank = 1,
+                unit = "RECON_swat_smg",
+                tactics = self._tactics.recon_rescue
+            },
+            {
+                amount_min = 0,
+                freq = 0.5,
+                amount_max = 1,
+                rank = 1,
+                unit = "RECON_swat_shotty",
+                tactics = self._tactics.recon_rescue
+            }
+        }
+    }
+    self.enemy_spawn_groups.tac_bronco_guy = {
+        amount = {
+            1,
+            1
+        },
+        spawn = {
+            {
+                amount_min = 1,
+                freq = 1,
+                amount_max = 1
+                rank = 1,
+                unit = "CS_cop_stealth_MP5",
+                tactics = self._tactics.recon_case
+            }
+        }
+    }
+
+    -- for shotgunner group
+    local replacements = {
+        ["CS_swat_MP5"] = "CS_swat_R870",
+        ["CS_heavy_M4"] = "CS_heavy_R870",
+        ["FBI_swat_M4"] = "FBI_swat_R870",
+        ["FBI_heavy_G36"] = "FBI_heavy_R870"
+    }
+
+    -- assault groups, don't want to include medics in reenforce, otherwise deep copy.
+    if self.enemy_spawn_groups.tac_swat_rifle_flank then
+        local ref = self.enemy_spawn_groups.tac_swat_rifle_flank
+        self.enemy_spawn_groups.tac_reenforce_swat_rifle = {amount = {}, spawn = {}}
+        local rifle = self.enemy_spawn_groups.tac_reenforce_swat_rifle
+        self.enemy_spawn_groups.tac_reenforce_swat_shotgun = {amount = {}, spawn = {}}
+        local shotgun = self.enemy_spawn_groups.tac_reenforce_swat_shotgun
+        local amount = {}
+        for k, data in pairs(ref.amount) do
+            amount[k] = data
+            amount[k] = data
+        end
+        --units
+        for _, u_data in pairs(ref.spawn) do
+            if u_data.unit = "medic_M4" or u_data.unit = "medic_R870" then
+                -- remove medic
+                if u_data.amount_min and amount[1] then amount[1] = amount[1] - u_data.amount_min end
+                if u_data.amount_max and amount[2] then amount[2] = amount[2] - u_data.amount_max end
+            else
+                local r_tab = {}
+                local sh_tab = {}
+                -- copy data
+                for k, v in pairs(u_data) do
+                    r_tab[k] = v
+                    if k == "unit" and replacements[v] then
+                        sh_tab[k] = replacements[v]
+                    elseif k == "tactics" then
+                        sh_tab[k] = self._tactics.recon_rescue
+                    else
+                        sh_tab[k] = v
+                    end
+                end
+                table.insert(rifle.spawn, r_tab)
+                table.insert(shotgun.spawn, sh_tab)
+            end
+        end
+        rifle.amount = amount
+        shotgun.amount = amount
+    end
 end)
 
 Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data", function(self, difficulty_index, difficulty)
@@ -881,7 +1025,7 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
             0.1,
             0.3
         },
-        single_spooc = {
+        single_spoocs = {
             0,
             0,
             0
@@ -891,6 +1035,12 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
             0,
             0
         }
+    }
+    
+    self.star_recon_groups_to_inject = {
+        "tac_recon_case",
+        "tac_recon_rescue",
+        "tac_recon_rush"
     }
     
     if self.rtre_menu_data then
@@ -918,7 +1068,7 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
                     0.3,
                     0.6
                 },
-                single_spooc = {
+                single_spoocs = {
                     0,
                     0,
                     0
@@ -930,12 +1080,16 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
                 }
             }
         end
+        table.insert(self.star_recon_groups_to_inject, "tac_reenforce_2lights")
+        table.insert(self.star_recon_groups_to_inject, "tac_reenforce_1heavy")
+        table.insert(self.star_recon_groups_to_inject, "tac_reenforce_2heavies")
+        table.insert(self.star_recon_groups_to_inject, "tac_reenforce_team")
         --classic enemy set
         if self.rtre_menu_data.enemy_set == 3 then
             if difficulty_index <= 3 and heist_type ~= "fbi" then
                 --reset groups
                 self.besiege.recon.groups = {
-                    single_spooc = {
+                    single_spoocs = {
                         0,
                         0,
                         0
@@ -948,7 +1102,7 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
                 }
                 if reenforce_valid then 
                     self.besiege.reenforce.groups = {
-                        single_spooc = {
+                        single_spoocs = {
                             0,
                             0,
                             0
@@ -967,13 +1121,19 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
                         1,
                         1
                     }
+
+                    self.star_recon_groups_to_inject = {
+                        "tac_recon_swats"
+                    }
                     
                     if reenforce_valid then
-                        self.besiege.reenforce.groups.tac_recon_swats = {
+                        self.besiege.reenforce.groups.tac_reenforce_swats = {
                             1,
                             1,
                             1
                         }
+
+                        table.insert(self.star_recon_groups_to_inject, "tac_reenforce_swats")
                     end
                 --normal diff
                 elseif difficulty_index <= 2 then
@@ -987,17 +1147,26 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
                         0,
                         1
                     }
+
+                    self.star_recon_groups_to_inject = {
+                        "tac_recon_police",
+                        "tac_recon_swats"
+                    }
+
                     if reenforce_valid then
                         self.besiege.reenforce.groups.tac_reenforce_police = {
                             1,
                             1,
                             0
                         }
-                        self.besiege.reenforce.groups.tac_recon_swats = {
+                        self.besiege.reenforce.groups.tac_reenforce_swats = {
                             0,
                             0,
                             1
                         }
+
+                        table.insert(self.star_recon_groups_to_inject, "tac_reenforce_police")
+                        table.insert(self.star_recon_groups_to_inject, "tac_reenforce_swats")
                     end
                 -- hard diff
                 else 
@@ -1011,17 +1180,26 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
                         0.5,
                         1
                     }
+
+                    self.star_recon_groups_to_inject = {
+                        "tac_recon_police",
+                        "tac_recon_swats"
+                    }
+
                     if reenforce_valid then
                         self.besiege.reenforce.groups.tac_reenforce_police = {
                             1,
                             0.5,
                             0
                         }
-                        self.besiege.reenforce.groups.tac_recon_swats = {
+                        self.besiege.reenforce.groups.tac_reenforce_swats = {
                             0,
                             0.5,
                             1
                         }
+
+                        table.insert(self.star_recon_groups_to_inject, "tac_reenforce_police")
+                        table.insert(self.star_recon_groups_to_inject, "tac_reenforce_swats")
                     end
                 end
             -- vh diff
@@ -1043,7 +1221,7 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
                         0,
                         0.1
                     },
-                    single_spooc = {
+                    single_spoocs = {
                         0,
                         0,
                         0
@@ -1077,7 +1255,7 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
                             0,
                             0.3
                         },
-                        single_spooc = {
+                        single_spoocs = {
                             0,
                             0,
                             0
@@ -1096,13 +1274,17 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
                         1,
                         0
                     }
+
+                    table.insert(self.star_recon_groups_to_inject, "tac_recon_swats")
                     
                     if reenforce_valid then
-                        self.besiege.reenforce.groups.tac_recon_swats = {
+                        self.besiege.reenforce.groups.tac_reenforce_swats = {
                             1,
                             1,
                             0
                         }
+
+                        table.insert(self.star_recon_groups_to_inject, "tac_reenforce_swats")
                     end
                 else
                     self.besiege.recon.groups.tac_recon_police = {
@@ -1115,19 +1297,26 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
                         1,
                         0
                     }
+
+                    table.insert(self.star_recon_groups_to_inject, "tac_recon_police")
+                    table.insert(self.star_recon_groups_to_inject, "tac_recon_swats")
                     if reenforce_valid then
                         self.besiege.reenforce.groups.tac_reenforce_police = {
                             0.5,
                             0,
                             0
                         }
-                        self.besiege.reenforce.groups.tac_recon_swats = {
+                        self.besiege.reenforce.groups.tac_reenforce_swats = {
                             0.5,
                             1,
                             0
                         }
+
+                        table.insert(self.star_recon_groups_to_inject, "tac_reenforce_police")
+                        table.insert(self.star_recon_groups_to_inject, "tac_reenforce_swats")
                     end
                 end
+            -- Overkill+
             else
                 -- add cops and swats to difficulties overkill and above. no cops on remote heists
                 if heist_type == "remote" or heist_type == "fbi" then
@@ -1136,13 +1325,17 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
                         0,
                         0
                     }
+
+                    table.insert(self.star_recon_groups_to_inject, "tac_recon_swats")
                     
                     if reenforce_valid then
-                        self.besiege.reenforce.groups.tac_recon_swats = {
+                        self.besiege.reenforce.groups.tac_reenforce_swats = {
                             0.5,
                             0,
                             0
                         }
+
+                        table.insert(self.star_recon_groups_to_inject, "tac_reenforce_swats")
                     end
                 else
                     self.besiege.recon.groups.tac_recon_police = {
@@ -1155,20 +1348,181 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
                         0,
                         0
                     }
+
+                    table.insert(self.star_recon_groups_to_inject, "tac_recon_police")
+                    table.insert(self.star_recon_groups_to_inject, "tac_recon_swats")
+
                     if reenforce_valid then
                         self.besiege.reenforce.groups.tac_reenforce_police = {
                             0.15,
                             0,
                             0
                         }
-                        self.besiege.reenforce.groups.tac_recon_swats = {
+                        self.besiege.reenforce.groups.tac_reenforce_swats = {
                             0.35,
                             0,
                             0
                         }
+                        table.insert(self.star_recon_groups_to_inject, "tac_reenforce_police")
+                        table.insert(self.star_recon_groups_to_inject, "tac_reenforce_swats")
                     end
                 end
+                -- add assault groups on overkill+ for classic enemy set reenforce
+                if reenforce_valid then
+                    self.besiege.reenforce.groups.tac_reenforce_swat_rifle = {
+                        0,
+                        0,
+                        0.5
+                    }
+                    self.besiege.reenforce.groups.tac_reenforce_swat_shotgun = {
+                        0,
+                        0,
+                        0.5
+                    }
+
+                    table.insert(self.star_recon_groups_to_inject, "tac_reenforce_swat_rifle")
+                    table.insert(self.star_recon_groups_to_inject, "tac_reenforce_swat_shotgun")
+                end
             end
+        -- smg swats
+        elseif self.rtre_menu_data.enemy_set == 4 then
+            self.besiege.recon.groups = {
+                tac_recon_swats = {
+                    1,
+                    1,
+                    1
+                },
+                single_spoocs = {
+                    0,
+                    0,
+                    0
+                },
+                Phalanx = {
+                    0,
+                    0,
+                    0
+                }
+            }
+            
+            self.star_recon_groups_to_inject = {
+                "tac_recon_swats"
+            }
+
+            if reenforce_valid then
+                self.besiege.reenforce.groups = {
+                    tac_reenforce_swats = {
+                        1,
+                        1,
+                        1
+                    },
+                    single_spoocs = {
+                        0,
+                        0,
+                        0
+                    },
+                    Phalanx = {
+                        0,
+                        0,
+                        0
+                    }
+                }
+
+                table.insert(self.star_recon_groups_to_inject, "tac_reenforce_swats")
+            }
+        -- assault groups
+        elseif self.rtre_menu_data.enemy_set == 5 then
+            self.besiege.recon.groups = {
+                tac_swat_rifle_flank = {
+                    0.7,
+                    0.6,
+                    0.5
+                },
+                tac_swat_shotgun_flank = {
+                    0.3,
+                    0.3,
+                    0.3
+                },
+                tac_swat_shotgun_rush = {
+                    0,
+                    0.1,
+                    0.2
+                },
+                single_spoocs = {
+                    0,
+                    0,
+                    0
+                },
+                Phalanx = {
+                    0,
+                    0,
+                    0
+                }
+            }
+
+            --add some rare specials
+            if difficulty_index > 2 and self.enemy_spawn_groups.tac_tazer_flanking then
+                self.besiege.recon.groups.tac_tazer_flanking = {
+                    0,
+                    0.03,
+                    0.07
+                }
+            end
+            if difficulty_index > 3 and self.enemy_spawn_groups.FBI_spoocs then
+                self.besiege.recon.groups.FBI_spoocs = {
+                    0,
+                    0.02,
+                    0.03
+                }
+            end
+
+            self.star_recon_groups_to_inject = {}
+
+            if reenforce_valid then
+                self.besiege.reenforce.groups = {
+                    tac_reenforce_swat_rifle = {
+                        0.5,
+                        0.5,
+                        0.5
+                    },
+                    tac_reenforce_swat_shotgun = {
+                        0.5,
+                        0.5,
+                        0.5
+                    },
+                    single_spoocs = {
+                        0,
+                        0,
+                        0
+                    },
+                    Phalanx = {
+                        0,
+                        0,
+                        0
+                    }
+                }
+
+                table.insert(self.star_recon_groups_to_inject, "tac_reenforce_swat_rifle")
+                table.insert(self.star_recon_groups_to_inject, "tac_reenforce_swat_shotgun")
+            }
+        end
+        --bronco guy
+        local faction = Global.level_data and Global.level_data.level_id and tweak_data.levels[Global.level_data.level_id].ai_group_type
+        if self.rtre_menu_data.bronco_guy and faction and (faction == "america" or faction == "zombie") and heist_type ~= "sanfran" and heist_type ~= "remote" then
+            self.besiege.recon.groups.tac_bronco_guy = {
+                0.01,
+                0.01,
+                0.01
+            }
+            
+            if reenforce_valid then
+                self.besiege.reenforce.groups.tac_bronco_guy = {
+                    0.01,
+                    0.01,
+                    0.01
+                }
+            end
+
+            table.insert(self.star_recon_groups_to_inject, "tac_bronco_guy")
         end
     end
     
