@@ -61,7 +61,7 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
         for _, package in ipairs(level_package) do
             -- i don't feel like making a table so this bad if statement will have to do
             -- i can't just say if not job_bph because custom packages from custom heists would crash
-            if not murky scar and (package == "packages/job_mex" or package == "packages/job_mex2" or package == "packages/job_des") then
+            if not murky_scar and (package == "packages/job_mex" or package == "packages/job_mex2" or package == "packages/job_des") then
                 murky_scar = Idstring("units/pd2_dlc_des/characters/ene_murkywater_not_security_2/ene_murkywater_not_security_2")
             end
 
@@ -163,6 +163,7 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
         self.unit_categories.RECON_light = {
             unit_types = {
                 america = {
+                    Idstring("units/payday2/characters/ene_cop_2/ene_cop_2"),
                     Idstring("units/payday2/characters/ene_cop_3/ene_cop_3"),
                     Idstring("units/payday2/characters/ene_cop_4/ene_cop_4")
                 },
@@ -171,6 +172,7 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
                     Idstring("units/pd2_dlc_mad/characters/ene_akan_cs_cop_asval_smg/ene_akan_cs_cop_asval_smg")
                 },
                 zombie = {
+                    Idstring("units/pd2_dlc_hvh/characters/ene_cop_hvh_2/ene_cop_hvh_2"),
                     Idstring("units/pd2_dlc_hvh/characters/ene_cop_hvh_3/ene_cop_hvh_3"),
                     Idstring("units/pd2_dlc_hvh/characters/ene_cop_hvh_4/ene_cop_hvh_4")
                 },
@@ -188,7 +190,8 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
         self.unit_categories.RECON_heavy = {
             unit_types = {
                 america = {
-                    Idstring("units/payday2/characters/ene_cop_2/ene_cop_2"),
+                    Idstring("units/payday2/characters/ene_cop_3/ene_cop_3"),
+                    Idstring("units/payday2/characters/ene_cop_4/ene_cop_4"),
                     Idstring("units/payday2/characters/ene_fbi_3/ene_fbi_3")
                 },
                 russia = {
@@ -196,7 +199,8 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
                     Idstring("units/pd2_dlc_mad/characters/ene_akan_cs_cop_r870/ene_akan_cs_cop_r870")
                 },
                 zombie = {
-                    Idstring("units/pd2_dlc_hvh/characters/ene_cop_hvh_2/ene_cop_hvh_2"),
+                    Idstring("units/pd2_dlc_hvh/characters/ene_cop_hvh_3/ene_cop_hvh_3"),
+                    Idstring("units/pd2_dlc_hvh/characters/ene_cop_hvh_4/ene_cop_hvh_4"),
                     Idstring("units/pd2_dlc_hvh/characters/ene_fbi_hvh_3/ene_fbi_hvh_3")
 
                 },
@@ -206,6 +210,7 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
                 },
                 federales = {
                     Idstring("units/payday2/characters/ene_fbi_1/ene_fbi_1"),
+                    Idstring("units/payday2/characters/ene_fbi_2/ene_fbi_2"),
                     Idstring("units/payday2/characters/ene_fbi_3/ene_fbi_3")
 
                 }
@@ -532,12 +537,14 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
 
         elseif difficulty_index <= 4 and not is_classic then
             self.unit_categories.RECON_light.unit_types.america = {
+                Idstring("units/pd2_dlc_rvd/characters/ene_la_cop_2/ene_la_cop_2"),
                 Idstring("units/pd2_dlc_rvd/characters/ene_la_cop_3/ene_la_cop_3"),
                 Idstring("units/pd2_dlc_rvd/characters/ene_la_cop_4/ene_la_cop_4")
             }
 
             self.unit_categories.RECON_heavy.unit_types.america = {
-                Idstring("units/pd2_dlc_rvd/characters/ene_la_cop_2/ene_la_cop_2"),
+                Idstring("units/pd2_dlc_rvd/characters/ene_la_cop_3/ene_la_cop_3"),
+                Idstring("units/pd2_dlc_rvd/characters/ene_la_cop_4/ene_la_cop_4"),
                 Idstring("units/payday2/characters/ene_fbi_3/ene_fbi_3")
             }
         end
@@ -578,6 +585,7 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
 
             self.unit_categories.RECON_heavy.unit_types.america = {
                 Idstring("units/payday2/characters/ene_fbi_1/ene_fbi_1"),
+                Idstring("units/payday2/characters/ene_fbi_2/ene_fbi_2"),
                 Idstring("units/payday2/characters/ene_fbi_3/ene_fbi_3")
             }
         end
@@ -927,7 +935,7 @@ Hooks:PostHook(GroupAITweakData, "_init_enemy_spawn_groups", "star_recon_init_en
             {
                 amount_min = 1,
                 freq = 1,
-                amount_max = 1
+                amount_max = 1,
                 rank = 1,
                 unit = "CS_cop_stealth_MP5",
                 tactics = self._tactics.recon_case
@@ -941,6 +949,15 @@ Hooks:PostHook(GroupAITweakData, "_init_enemy_spawn_groups", "star_recon_init_en
         ["CS_heavy_M4"] = "CS_heavy_R870",
         ["FBI_swat_M4"] = "FBI_swat_R870",
         ["FBI_heavy_G36"] = "FBI_heavy_R870"
+    }
+
+    local heavies = {
+        "CS_heavy_M4",
+        "CS_heavy_R870",
+        "CS_heavy_M4_w",
+        "FBI_heavy_G36",
+        "FBI_heavy_R870",
+        "FBI_heavy_G36_w"
     }
 
     -- assault groups, don't want to include medics in reenforce, otherwise deep copy.
@@ -957,23 +974,45 @@ Hooks:PostHook(GroupAITweakData, "_init_enemy_spawn_groups", "star_recon_init_en
         end
         --units
         for _, u_data in pairs(ref.spawn) do
-            if u_data.unit = "medic_M4" or u_data.unit = "medic_R870" then
+            if u_data.unit == "medic_M4" or u_data.unit == "medic_R870" then
                 -- remove medic
                 if u_data.amount_min and amount[1] then amount[1] = amount[1] - u_data.amount_min end
                 if u_data.amount_max and amount[2] then amount[2] = amount[2] - u_data.amount_max end
             else
                 local r_tab = {}
                 local sh_tab = {}
+                local heavy_min_reduced = false
+                local heavy_max_reduced = false
                 -- copy data
                 for k, v in pairs(u_data) do
-                    r_tab[k] = v
-                    if k == "unit" and replacements[v] then
-                        sh_tab[k] = replacements[v]
-                    elseif k == "tactics" then
-                        sh_tab[k] = self._tactics.recon_rescue
+                    -- reduce heavy count by 1.
+                    if k == "min_amount" and not heavy_min_reduced and v > 0 and u_data.unit and table.contains(heavies, u_data.unit) then
+                        heavy_min_reduced = true
+                        r_tab[k] = v - 1
+                        sh_tab[k] = v - 1
+                        amount[1] = amount[1] - 1
+                    elseif k == "max_amount" and not heavy_max_reduced and v > 0 and u_data.unit and table.contains(heavies, u_data.unit) then
+                        heavy_max_reduced = true
+                        r_tab[k] = v - 1
+                        sh_tab[k] = v - 1
+                        amount[2] = amount[2] - 1
                     else
-                        sh_tab[k] = v
+                        r_tab[k] = v
+                        if k == "unit" and replacements[v] then
+                            sh_tab[k] = replacements[v]
+                        elseif k == "tactics" then
+                            sh_tab[k] = self._tactics.recon_rescue
+                        else
+                            sh_tab[k] = v
+                        end
                     end
+                end
+                -- if heavies not reduced at least reduce entire thing by one
+                if not heavy_min_reduced then
+                    amount[1] = amount[1] - 1
+                end
+                if not heavy_max_reduced then
+                    amount[2] = amount[2] - 1
                 end
                 table.insert(rifle.spawn, r_tab)
                 table.insert(shotgun.spawn, sh_tab)
@@ -1428,7 +1467,7 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
                 }
 
                 table.insert(self.star_recon_groups_to_inject, "tac_reenforce_swats")
-            }
+            end
         -- assault groups
         elseif self.rtre_menu_data.enemy_set == 5 then
             self.besiege.recon.groups = {
@@ -1503,10 +1542,10 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
 
                 table.insert(self.star_recon_groups_to_inject, "tac_reenforce_swat_rifle")
                 table.insert(self.star_recon_groups_to_inject, "tac_reenforce_swat_shotgun")
-            }
+            end
         end
         --bronco guy
-        local faction = Global.level_data and Global.level_data.level_id and tweak_data.levels[Global.level_data.level_id].ai_group_type
+        local faction = Global.level_data and Global.level_data.level_id and tweak_data_ref.levels[Global.level_data.level_id].ai_group_type
         if self.rtre_menu_data.bronco_guy and faction and (faction == "america" or faction == "zombie") and heist_type ~= "sanfran" and heist_type ~= "remote" then
             self.besiege.recon.groups.tac_bronco_guy = {
                 0.01,
