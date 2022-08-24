@@ -14,6 +14,8 @@ function GroupAITweakData:getHeistType()
         return "la"
     elseif level_id == "chas" or level_id == "sand" or level_id == "pent" then
         return "sanfran"
+    elseif level_id == "ranc" then
+        return "texas"
     else
         return "normal"
     end
@@ -371,7 +373,7 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
         access = access_type_walk_only
     }
 
-    -- similar to CS_swat but different for mayhem/death wish
+    -- similar to CS_swat but different for mayhem/death wish. also different on DS because the russia blue swat equivalents would be overpowered compared to the rest of the russia units
     if difficulty_index == 6 or difficulty_index == 7 then
         self.unit_categories.RECON_swat_smg = {
             unit_types = {
@@ -379,7 +381,7 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
                     Idstring("units/payday2/characters/ene_city_swat_3/ene_city_swat_3")
                 },
                 russia = {
-                    Idstring("units/pd2_dlc_mad/characters/ene_akan_cs_swat_ak47_ass/ene_akan_cs_swat_ak47_ass")
+                    Idstring("units/pd2_dlc_mad/characters/ene_akan_fbi_swat_dw_ak47_ass/ene_akan_fbi_swat_dw_ak47_ass")
                 },
                 zombie = {
                     Idstring("units/pd2_dlc_hvh/characters/ene_swat_hvh_1/ene_swat_hvh_1")
@@ -400,7 +402,7 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
                     Idstring("units/payday2/characters/ene_city_swat_2/ene_city_swat_2")
                 },
                 russia = {
-                    Idstring("units/pd2_dlc_mad/characters/ene_akan_cs_swat_r870/ene_akan_cs_swat_r870")
+                    Idstring("units/pd2_dlc_mad/characters/ene_akan_fbi_swat_dw_r870/ene_akan_fbi_swat_dw_r870")
                 },
                 zombie = {
                     Idstring("units/pd2_dlc_hvh/characters/ene_swat_hvh_2/ene_swat_hvh_2")
@@ -414,11 +416,76 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
             },
             access = access_type_all
         }
+    elseif difficulty_index == 8 then
+        self.unit_categories.RECON_swat_smg = {
+            unit_types = {
+                america = {
+                    Idstring("units/pd2_dlc_gitgud/characters/ene_zeal_swat/ene_zeal_swat")
+                },
+                russia = {
+                    Idstring("units/pd2_dlc_mad/characters/ene_akan_fbi_swat_dw_ak47_ass/ene_akan_fbi_swat_dw_ak47_ass")
+                },
+                zombie = {
+                    Idstring("units/pd2_dlc_hvh/characters/ene_swat_hvh_1/ene_swat_hvh_1")
+                },
+                murkywater = {
+                    Idstring("units/pd2_dlc_bph/characters/ene_murkywater_light/ene_murkywater_light")
+                },
+                federales = {
+                    Idstring("units/pd2_dlc_bex/characters/ene_swat_policia_federale/ene_swat_policia_federale")
+                }
+            },
+            access = access_type_all
+        }
+
+        self.unit_categories.RECON_swat_shotty = {
+            unit_types = {
+                america = {
+                    Idstring("units/pd2_dlc_gitgud/characters/ene_zeal_swat/ene_zeal_swat")
+                },
+                russia = {
+                    Idstring("units/pd2_dlc_mad/characters/ene_akan_fbi_swat_dw_r870/ene_akan_fbi_swat_dw_r870")
+                },
+                zombie = {
+                    Idstring("units/pd2_dlc_hvh/characters/ene_swat_hvh_2/ene_swat_hvh_2")
+                },
+                murkywater = {
+                    Idstring("units/pd2_dlc_bph/characters/ene_murkywater_light/ene_murkywater_light")
+                },
+                federales = {
+                    Idstring("units/pd2_dlc_bex/characters/ene_swat_policia_federale/ene_swat_policia_federale")
+                }
+            },
+            access = access_type_all
+        }
     else
         self.unit_categories.RECON_swat_smg = self.unit_categories.CS_swat_MP5
         self.unit_categories.RECON_swat_shotty = self.unit_categories.CS_swat_R870
         
     end
+
+    self.unit_categories.RECON_bronco_guy = {
+        unit_types = {
+            america = {
+                Idstring("units/payday2/characters/ene_cop_2/ene_cop_2")
+            },
+            russia = {
+                Idstring("units/pd2_dlc_mad/characters/ene_akan_cs_cop_akmsu_smg/ene_akan_cs_cop_akmsu_smg"),
+                Idstring("units/pd2_dlc_mad/characters/ene_akan_cs_cop_asval_smg/ene_akan_cs_cop_asval_smg")
+            },
+            zombie = {
+                Idstring("units/pd2_dlc_hvh/characters/ene_cop_hvh_2/ene_cop_hvh_2")
+            },
+            murkywater = {
+                murky_c45
+            },
+            federales = {
+                Idstring("units/pd2_dlc_bex/characters/ene_policia_01/ene_policia_01"),
+                Idstring("units/pd2_dlc_bex/characters/ene_policia_02/ene_policia_02")
+            }
+        },
+        access = access_type_walk_only
+    }
 
     -- per level modifications
     local heist_type = self:getHeistType()
@@ -468,6 +535,13 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
                 Idstring("units/payday2/characters/ene_fbi_2/ene_fbi_2")
             }
         end
+
+        self.unit_categories.RECON_bronco_guy.unit_types.america = {
+            Idstring("units/payday2/characters/ene_fbi_1/ene_fbi_1")
+        }
+
+        self.unit_categories.RECON_bronco_guy.unit_types.zombie = self.unit_categories.RECON_bronco_guy.unit_types.america
+        self.unit_categories.RECON_bronco_guy.unit_types.federales = self.unit_categories.RECON_bronco_guy.unit_types.america
 
     elseif heist_type and heist_type == "remote" then
         --replace cops with fbi units in remote heists. doesn't affect overkill+
@@ -521,6 +595,13 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
                 Idstring("units/payday2/characters/ene_fbi_3/ene_fbi_3")
             }
         end
+        
+        self.unit_categories.RECON_bronco_guy.unit_types.america = {
+            Idstring("units/payday2/characters/ene_fbi_1/ene_fbi_1")
+        }
+
+        self.unit_categories.RECON_bronco_guy.unit_types.zombie = self.unit_categories.RECON_bronco_guy.unit_types.america
+        self.unit_categories.RECON_bronco_guy.unit_types.federales = self.unit_categories.RECON_bronco_guy.unit_types.america
 
     elseif heist_type and heist_type == "la" then
         --la cops for reservoir dogs, like the scripted spawn
@@ -559,8 +640,7 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
             Idstring("units/pd2_dlc_rvd/characters/ene_la_cop_4/ene_la_cop_4")
         }
 
-        -- don't ask me why the bronco cop is under "mp5" im just savin memory here
-        self.unit_categories.CS_cop_stealth_MP5.unit_types.america = {
+        self.unit_categories.RECON_bronco_guy.unit_types.america = {
             Idstring("units/pd2_dlc_rvd/characters/ene_la_cop_2/ene_la_cop_2")
         }
 
@@ -597,6 +677,50 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
         self.unit_categories.RECON_police_heavy.unit_types.america = {
             Idstring("units/pd2_dlc_chas/characters/ene_male_chas_police_01/ene_male_chas_police_01"),
             Idstring("units/pd2_dlc_chas/characters/ene_male_chas_police_02/ene_male_chas_police_02")
+        }
+
+        self.unit_categories.RECON_bronco_guy.unit_types.america = {
+            Idstring("units/pd2_dlc_chas/characters/ene_male_chas_police_01/ene_male_chas_police_01"),
+            Idstring("units/pd2_dlc_chas/characters/ene_male_chas_police_02/ene_male_chas_police_02")
+        }
+    elseif heist_type and heist_type == "texas" then
+        --texas rangers for the texas heists
+        if difficulty_index <= 2 or (difficulty_index == 3 and is_classic) then
+            self.unit_categories.RECON_light.unit_types.america = {
+                Idstring("units/pd2_dlc_ranc/characters/ene_male_ranc_ranger_01/ene_male_ranc_ranger_01"),
+                Idstring("units/pd2_dlc_ranc/characters/ene_male_ranc_ranger_01/ene_male_ranc_ranger_02")
+            }
+
+            self.unit_categories.RECON_heavy.unit_types.america = {
+                Idstring("units/pd2_dlc_ranc/characters/ene_male_ranc_ranger_01/ene_male_ranc_ranger_01"),
+                Idstring("units/pd2_dlc_ranc/characters/ene_male_ranc_ranger_01/ene_male_ranc_ranger_02")
+            }
+
+        elseif difficulty_index <= 4 and not is_classic then
+            self.unit_categories.RECON_light.unit_types.america = {
+                Idstring("units/pd2_dlc_ranc/characters/ene_male_ranc_ranger_01/ene_male_ranc_ranger_01"),
+                Idstring("units/pd2_dlc_ranc/characters/ene_male_ranc_ranger_01/ene_male_ranc_ranger_02")
+            }
+
+            self.unit_categories.RECON_heavy.unit_types.america = {
+                Idstring("units/payday2/characters/ene_fbi_1/ene_fbi_1"),
+                Idstring("units/payday2/characters/ene_fbi_2/ene_fbi_2"),
+                Idstring("units/payday2/characters/ene_fbi_3/ene_fbi_3")
+            }
+        end
+        self.unit_categories.RECON_police_light.unit_types.america = {
+            Idstring("units/pd2_dlc_ranc/characters/ene_male_ranc_ranger_01/ene_male_ranc_ranger_01"),
+            Idstring("units/pd2_dlc_ranc/characters/ene_male_ranc_ranger_01/ene_male_ranc_ranger_02")
+        }
+
+        self.unit_categories.RECON_police_heavy.unit_types.america = {
+            Idstring("units/pd2_dlc_ranc/characters/ene_male_ranc_ranger_01/ene_male_ranc_ranger_01"),
+            Idstring("units/pd2_dlc_ranc/characters/ene_male_ranc_ranger_01/ene_male_ranc_ranger_02")
+        }
+
+        self.unit_categories.RECON_bronco_guy.unit_types.america = {
+            Idstring("units/pd2_dlc_ranc/characters/ene_male_ranc_ranger_01/ene_male_ranc_ranger_01"),
+            Idstring("units/pd2_dlc_ranc/characters/ene_male_ranc_ranger_01/ene_male_ranc_ranger_02")
         }
     end
 
@@ -937,7 +1061,7 @@ Hooks:PostHook(GroupAITweakData, "_init_enemy_spawn_groups", "star_recon_init_en
                 freq = 1,
                 amount_max = 1,
                 rank = 1,
-                unit = "CS_cop_stealth_MP5",
+                unit = "RECON_bronco_guy",
                 tactics = self._tactics.recon_case
             }
         }
@@ -973,6 +1097,8 @@ Hooks:PostHook(GroupAITweakData, "_init_enemy_spawn_groups", "star_recon_init_en
             amount[k] = data
         end
         --units
+        local heavy_min_reduced = false
+        local heavy_max_reduced = false
         for _, u_data in pairs(ref.spawn) do
             if u_data.unit == "medic_M4" or u_data.unit == "medic_R870" then
                 -- remove medic
@@ -981,17 +1107,15 @@ Hooks:PostHook(GroupAITweakData, "_init_enemy_spawn_groups", "star_recon_init_en
             else
                 local r_tab = {}
                 local sh_tab = {}
-                local heavy_min_reduced = false
-                local heavy_max_reduced = false
                 -- copy data
                 for k, v in pairs(u_data) do
                     -- reduce heavy count by 1.
-                    if k == "min_amount" and not heavy_min_reduced and v > 0 and u_data.unit and table.contains(heavies, u_data.unit) then
+                    if k == "amount_min" and not heavy_min_reduced and v > 0 and u_data.unit and table.contains(heavies, u_data.unit) then
                         heavy_min_reduced = true
                         r_tab[k] = v - 1
                         sh_tab[k] = v - 1
                         amount[1] = amount[1] - 1
-                    elseif k == "max_amount" and not heavy_max_reduced and v > 0 and u_data.unit and table.contains(heavies, u_data.unit) then
+                    elseif k == "amount_max" and not heavy_max_reduced and v > 0 and u_data.unit and table.contains(heavies, u_data.unit) then
                         heavy_max_reduced = true
                         r_tab[k] = v - 1
                         sh_tab[k] = v - 1
@@ -1007,16 +1131,18 @@ Hooks:PostHook(GroupAITweakData, "_init_enemy_spawn_groups", "star_recon_init_en
                         end
                     end
                 end
-                -- if heavies not reduced at least reduce entire thing by one
-                if not heavy_min_reduced then
-                    amount[1] = amount[1] - 1
+                if r_tab.amount_max > 0 then
+                    table.insert(rifle.spawn, r_tab)
+                    table.insert(shotgun.spawn, sh_tab)
                 end
-                if not heavy_max_reduced then
-                    amount[2] = amount[2] - 1
-                end
-                table.insert(rifle.spawn, r_tab)
-                table.insert(shotgun.spawn, sh_tab)
             end
+        end
+        -- if heavies not reduced at least reduce entire thing by one
+        if not heavy_min_reduced then
+            amount[1] = amount[1] - 1
+        end
+        if not heavy_max_reduced then
+            amount[2] = amount[2] - 1
         end
         rifle.amount = amount
         shotgun.amount = amount
@@ -1064,7 +1190,7 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
             0.1,
             0.3
         },
-        single_spoocs = {
+        single_spooc = {
             0,
             0,
             0
@@ -1106,29 +1232,20 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
                     0,
                     0.3,
                     0.6
-                },
-                single_spoocs = {
-                    0,
-                    0,
-                    0
-                },
-                Phalanx = {
-                    0,
-                    0,
-                    0
                 }
             }
+
+            table.insert(self.star_recon_groups_to_inject, "tac_reenforce_2lights")
+            table.insert(self.star_recon_groups_to_inject, "tac_reenforce_1heavy")
+            table.insert(self.star_recon_groups_to_inject, "tac_reenforce_2heavies")
+            table.insert(self.star_recon_groups_to_inject, "tac_reenforce_team")
         end
-        table.insert(self.star_recon_groups_to_inject, "tac_reenforce_2lights")
-        table.insert(self.star_recon_groups_to_inject, "tac_reenforce_1heavy")
-        table.insert(self.star_recon_groups_to_inject, "tac_reenforce_2heavies")
-        table.insert(self.star_recon_groups_to_inject, "tac_reenforce_team")
         --classic enemy set
         if self.rtre_menu_data.enemy_set == 3 then
             if difficulty_index <= 3 and heist_type ~= "fbi" then
                 --reset groups
                 self.besiege.recon.groups = {
-                    single_spoocs = {
+                    single_spooc = {
                         0,
                         0,
                         0
@@ -1140,18 +1257,7 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
                     }
                 }
                 if reenforce_valid then 
-                    self.besiege.reenforce.groups = {
-                        single_spoocs = {
-                            0,
-                            0,
-                            0
-                        },
-                        Phalanx = {
-                            0,
-                            0,
-                            0
-                        }
-                    }
+                    self.besiege.reenforce.groups = {}
                 end
                 -- remote heists below VH have just swat
                 if heist_type == "remote" then
@@ -1260,7 +1366,7 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
                         0,
                         0.1
                     },
-                    single_spoocs = {
+                    single_spooc = {
                         0,
                         0,
                         0
@@ -1293,16 +1399,6 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
                             0,
                             0,
                             0.3
-                        },
-                        single_spoocs = {
-                            0,
-                            0,
-                            0
-                        },
-                        Phalanx = {
-                            0,
-                            0,
-                            0
                         }
                     }
                 end
@@ -1360,7 +1456,7 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
                 -- add cops and swats to difficulties overkill and above. no cops on remote heists
                 if heist_type == "remote" or heist_type == "fbi" then
                     self.besiege.recon.groups.tac_recon_swats = {
-                        0.5,
+                        1,
                         0,
                         0
                     }
@@ -1369,7 +1465,7 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
                     
                     if reenforce_valid then
                         self.besiege.reenforce.groups.tac_reenforce_swats = {
-                            0.5,
+                            1,
                             0,
                             0
                         }
@@ -1378,12 +1474,12 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
                     end
                 else
                     self.besiege.recon.groups.tac_recon_police = {
-                        0.15,
+                        0.30,
                         0,
                         0
                     }
                     self.besiege.recon.groups.tac_recon_swats = {
-                        0.35,
+                        0.70,
                         0,
                         0
                     }
@@ -1393,12 +1489,12 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
 
                     if reenforce_valid then
                         self.besiege.reenforce.groups.tac_reenforce_police = {
-                            0.15,
+                            0.30,
                             0,
                             0
                         }
                         self.besiege.reenforce.groups.tac_reenforce_swats = {
-                            0.35,
+                            0.70,
                             0,
                             0
                         }
@@ -1431,7 +1527,7 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
                     1,
                     1
                 },
-                single_spoocs = {
+                single_spooc = {
                     0,
                     0,
                     0
@@ -1453,16 +1549,6 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
                         1,
                         1,
                         1
-                    },
-                    single_spoocs = {
-                        0,
-                        0,
-                        0
-                    },
-                    Phalanx = {
-                        0,
-                        0,
-                        0
                     }
                 }
 
@@ -1486,7 +1572,7 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
                     0.1,
                     0.2
                 },
-                single_spoocs = {
+                single_spooc = {
                     0,
                     0,
                     0
@@ -1498,15 +1584,27 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
                 }
             }
 
+            local function is_present(table)
+                if not table then
+                    return false
+                end
+                for _, v in pairs(table) do
+                    if type(v) == "number" and v > 0 then
+                        return true
+                    end
+                end
+                return false
+            end
+
             --add some rare specials
-            if difficulty_index > 2 and self.enemy_spawn_groups.tac_tazer_flanking then
+            if self.besiege.assault.groups and is_present(self.besiege.assault.groups.tac_tazer_flanking) then
                 self.besiege.recon.groups.tac_tazer_flanking = {
                     0,
                     0.03,
                     0.07
                 }
             end
-            if difficulty_index > 3 and self.enemy_spawn_groups.FBI_spoocs then
+            if self.besiege.assault.groups and is_present(self.besiege.assault.groups.FBI_spoocs) then
                 self.besiege.recon.groups.FBI_spoocs = {
                     0,
                     0.02,
@@ -1527,16 +1625,6 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
                         0.5,
                         0.5,
                         0.5
-                    },
-                    single_spoocs = {
-                        0,
-                        0,
-                        0
-                    },
-                    Phalanx = {
-                        0,
-                        0,
-                        0
                     }
                 }
 
@@ -1546,7 +1634,7 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
         end
         --bronco guy
         local faction = Global.level_data and Global.level_data.level_id and tweak_data_ref.levels[Global.level_data.level_id].ai_group_type
-        if self.rtre_menu_data.bronco_guy and faction and (faction == "america" or faction == "zombie") and heist_type ~= "sanfran" and heist_type ~= "remote" then
+        if self.rtre_menu_data.bronco_guy then
             self.besiege.recon.groups.tac_bronco_guy = {
                 0.01,
                 0.01,
