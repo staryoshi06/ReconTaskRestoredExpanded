@@ -6,10 +6,14 @@ function GroupAIStateStreet:_begin_assault()
 
     old_begin_assault(self)
 
+    if not self._task_data.assault.extra_time then
+        self._task_data.assault.extra_time = 0
+    end
+
     -- remove delay
     if (not extend_anticipation) and (not self._hunt_mode) and self._task_data.assault.is_hesitating then
         self._task_data.assault.is_hesitating = nil
-        self._task_data.assault.phase_end_t = self._task_data.assault.phase_end_t - self:_get_difficulty_dependent_value(self._tweak_data.assault.hostage_hesitation_delay)
+        self._task_data.assault.phase_end_t = self._task_data.assault.phase_end_t - self:_get_difficulty_dependent_value(self._tweak_data.assault.hostage_hesitation_delay) + self._task_data.assault.extra_time
     end
 end
 
@@ -23,23 +27,8 @@ function GroupAIStateStreet:_begin_new_tasks()
     local t = self._t
     local reenforce_candidates = nil
     local reenforce_data = task_data.reenforce
-    
-    local check_loot, check_valid_objs = nil
-    if self._recon_assault_condition then
-        if self._recon_assault_condition == 3 then
-            check_loot = true
-            if not self._task_data.recon.next_lootcheck_t then
-                self._task_data.recon.next_lootcheck_t = t + 10
-            end
-        elseif self._recon_assault_behaviour and (self._recon_assault_behaviour == 2 or self._recon_assault_behaviour == 3) and self._recon_assault_condition == 4  then
-            check_valid_objs = true
-            if not self._task_data.recon.next_objcheck_t then
-                self._task_data.recon.next_objcheck_t = t + 10
-            end
-        end
-    end
 
-    if reenforce_data.next_dispatch_t and reenforce_data.next_dispatch_t < t and ((not self._reenforce_valid) or self:is_reenforce_allowed()) then
+    if reenforce_data.next_dispatch_t and reenforce_data.next_dispatch_t < t then
         reenforce_candidates = {}
     end
 
@@ -49,7 +38,7 @@ function GroupAIStateStreet:_begin_new_tasks()
     -- new recon condition
     if recon_data.next_dispatch_t and recon_data.next_dispatch_t < t and not task_data.regroup.active and (not task_data.assault.active or (self._goin_valid and self:is_recon_allowed())) then
         recon_candidates = {}
-    elseif self._task_data.assault.active and self._task_data.recon.tasks[1] and recon_data.next_dispatch_t and recon_data.next_dispatch_t < t and not self:is_recon_allowed() then
+    elseif self._task_data.assault.active and self._task_data.recon.tasks[1] and recon_data.next_dispatch_t and recon_data.next_dispatch_t < t and (not self._goin_valid or not self:is_recon_allowed()) then
         self._task_data.recon.tasks = {}
     end
 
@@ -61,27 +50,6 @@ function GroupAIStateStreet:_begin_new_tasks()
     end
 
     if not reenforce_candidates and not recon_candidates and not assault_candidates then
-        -- if necessary check for loot or valid recon objectives
-        if check_loot and recon_data.next_lootcheck_t and recon_data.next_lootcheck_t < t then
-            recon_data.loot_present = nil
-            recon_data.next_lootcheck_t = t + 10
-            for area_id, area in pairs(all_areas) do
-                if area.loot then
-                    recon_data.loot_present = true
-                    break
-                end
-            end
-        end
-        if check_valid_objs and recon_data.next_objcheck_t and recon_data.next_objcheck_t < t then
-            recon_data.valid_recon_objectives = nil
-            recon_data.next_objcheck_t = t + 10
-            for area_id, area in pairs(all_areas) do
-                if area.loot or area.hostages then
-                    recon_data.valid_recon_objectives = true
-                    break
-                end
-            end
-        end
         return
     end
 
@@ -208,15 +176,6 @@ function GroupAIStateStreet:_begin_new_tasks()
             end
         end
 
-        if check_loot and area.loot then
-            recon_data.loot_present = true
-            recon_data.next_lootcheck_t = t + 10
-        end
-        if check_valid_objs and (area.loot or area.hostages) then
-            recon_data.valid_recon_objectives = true
-            recon_data.next_objcheck_t = t + 10
-        end
-
         i = i + 1
     until i > #to_search_areas
 
@@ -225,11 +184,12 @@ function GroupAIStateStreet:_begin_new_tasks()
     end
 
     --prevent cheese tactic, if no recon objectives or tasks and assault break is extended, or recon is set to appear always, then set task on the player
-    if recon_candidates and not recon_candidates[1] and not recon_data.tasks[1] and (recon_data.break_extended or self._recon_assault_condition == 5) then
+    if recon_candidates and not recon_candidates[1] and not recon_data.tasks[1] and (recon_data.break_extended or self._recon_assault_condition == 4) then
         for criminal_key, criminal_data in pairs(self._char_criminals) do
             if not criminal_data.status then
                 local nav_seg = criminal_data.tracker:nav_segment()
                 local area = self:get_area_from_nav_seg_id(nav_seg)
+
 
                 table.insert(recon_candidates, area)
             end
@@ -256,35 +216,5 @@ function GroupAIStateStreet:_begin_new_tasks()
         self:_begin_reenforce_task(reenforce_area)
 
         recon_candidates = nil
-    end
-end
-
-local old_upd_reenforce_tasks = GroupAIStateStreet._upd_reenforce_tasks
-function GroupAIStateStreet:_upd_reenforce_tasks() 
-    if (not self._reenforce_valid) or self:is_reenforce_allowed() then
-        old_upd_reenforce_tasks(self)
-    else
-        --retire all
-        if self._task_data and self._task_data.reenforce.active then
-            self._task_data.reenforce.active = nil
-            for group_id, group in pairs(self._groups) do
-                if group.objective.type == "reenforce_area" then
-                    if self._task_data and not self._task_data.assault.active or self._recon_assault_behaviour == 3 then
-                        group.objective.attitude = "avoid"
-                        group.objective.scan = true
-                        group.objective.stance = "hos"
-                        group.objective.type = "recon_area"
-                        self:_set_recon_objective_to_group(group)
-                        --If too far away then just retire
-                        if not group.objective.target_area or not group.objective.area or (mvector3.distance(group.objective.target_area.pos, group.objective.area.pos) > 5000 and not self._task_data.assault.active) then
-                            self:_assign_group_to_retire(group)
-                        end
-                    else
-                        self:_assign_group_to_retire(group)
-                    end
-                end
-            end
-            self._task_data.reenforce.tasks = {}
-        end
     end
 end

@@ -34,7 +34,7 @@ Hooks:PreHook(GroupAITweakData, "init", "star_recon_init_groupaitweakdata", func
     if not self.rtre_menu_data.murky_set then self.rtre_menu_data.murky_set = 1 end
     if not self.rtre_menu_data.bronco_guy then self.rtre_menu_data.bronco_guy = false end
     if not self.rtre_menu_data.assault_condition then self.rtre_menu_data.assault_condition = 1 end
-    if not self.rtre_menu_data.assault_behaviour then self.rtre_menu_data.assault_behaviour = 1 end
+    if not self.rtre_menu_data.reinforce_allowed then self.rtre_menu_data.reinforce_allowed = false end
 end)
 
 --Define recon units and add to original
@@ -540,9 +540,6 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
             Idstring("units/payday2/characters/ene_fbi_1/ene_fbi_1")
         }
 
-        self.unit_categories.RECON_bronco_guy.unit_types.zombie = self.unit_categories.RECON_bronco_guy.unit_types.america
-        self.unit_categories.RECON_bronco_guy.unit_types.federales = self.unit_categories.RECON_bronco_guy.unit_types.america
-
     elseif heist_type and heist_type == "remote" then
         --replace cops with fbi units in remote heists. doesn't affect overkill+
         self.unit_categories.RECON_light.access = access_type_all
@@ -688,18 +685,18 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
         if difficulty_index <= 2 or (difficulty_index == 3 and is_classic) then
             self.unit_categories.RECON_light.unit_types.america = {
                 Idstring("units/pd2_dlc_ranc/characters/ene_male_ranc_ranger_01/ene_male_ranc_ranger_01"),
-                Idstring("units/pd2_dlc_ranc/characters/ene_male_ranc_ranger_01/ene_male_ranc_ranger_02")
+                Idstring("units/pd2_dlc_ranc/characters/ene_male_ranc_ranger_02/ene_male_ranc_ranger_02")
             }
 
             self.unit_categories.RECON_heavy.unit_types.america = {
                 Idstring("units/pd2_dlc_ranc/characters/ene_male_ranc_ranger_01/ene_male_ranc_ranger_01"),
-                Idstring("units/pd2_dlc_ranc/characters/ene_male_ranc_ranger_01/ene_male_ranc_ranger_02")
+                Idstring("units/pd2_dlc_ranc/characters/ene_male_ranc_ranger_02/ene_male_ranc_ranger_02")
             }
 
         elseif difficulty_index <= 4 and not is_classic then
             self.unit_categories.RECON_light.unit_types.america = {
                 Idstring("units/pd2_dlc_ranc/characters/ene_male_ranc_ranger_01/ene_male_ranc_ranger_01"),
-                Idstring("units/pd2_dlc_ranc/characters/ene_male_ranc_ranger_01/ene_male_ranc_ranger_02")
+                Idstring("units/pd2_dlc_ranc/characters/ene_male_ranc_ranger_02/ene_male_ranc_ranger_02")
             }
 
             self.unit_categories.RECON_heavy.unit_types.america = {
@@ -710,17 +707,17 @@ Hooks:PostHook(GroupAITweakData, "_init_unit_categories", "star_recon_init_unit_
         end
         self.unit_categories.RECON_police_light.unit_types.america = {
             Idstring("units/pd2_dlc_ranc/characters/ene_male_ranc_ranger_01/ene_male_ranc_ranger_01"),
-            Idstring("units/pd2_dlc_ranc/characters/ene_male_ranc_ranger_01/ene_male_ranc_ranger_02")
+            Idstring("units/pd2_dlc_ranc/characters/ene_male_ranc_ranger_02/ene_male_ranc_ranger_02")
         }
 
         self.unit_categories.RECON_police_heavy.unit_types.america = {
             Idstring("units/pd2_dlc_ranc/characters/ene_male_ranc_ranger_01/ene_male_ranc_ranger_01"),
-            Idstring("units/pd2_dlc_ranc/characters/ene_male_ranc_ranger_01/ene_male_ranc_ranger_02")
+            Idstring("units/pd2_dlc_ranc/characters/ene_male_ranc_ranger_02/ene_male_ranc_ranger_02")
         }
 
         self.unit_categories.RECON_bronco_guy.unit_types.america = {
             Idstring("units/pd2_dlc_ranc/characters/ene_male_ranc_ranger_01/ene_male_ranc_ranger_01"),
-            Idstring("units/pd2_dlc_ranc/characters/ene_male_ranc_ranger_01/ene_male_ranc_ranger_02")
+            Idstring("units/pd2_dlc_ranc/characters/ene_male_ranc_ranger_02/ene_male_ranc_ranger_02")
         }
     end
 
@@ -822,15 +819,7 @@ Hooks:PostHook(GroupAITweakData, "_init_enemy_spawn_groups", "star_recon_init_en
                 tactics = self._tactics.recon_rescue_leader
             },
             {
-                amount_min = 0,
-                freq = 0.5,
-                amount_max = 1,
-                rank = 2,
-                unit = "RECON_heavy",
-                tactics = self._tactics.recon_rescue
-            },
-            {
-                amount_min = 2,
+                amount_min = 3,
                 freq = 1,
                 amount_max = 3,
                 rank = 1,
@@ -1209,7 +1198,7 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
     }
     
     if self.rtre_menu_data then
-        local reenforce_valid = (self.rtre_menu_data.assault_behaviour and self.rtre_menu_data.assault_behaviour > 1)
+        local reenforce_valid = (self.rtre_menu_data.reinforce_allowed)
         --reenforce
         if reenforce_valid then
             self.besiege.reenforce.groups = {

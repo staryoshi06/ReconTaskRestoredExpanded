@@ -53,25 +53,18 @@
             "items" : [
                 "assault_condition_never",
                 "assault_condition_hostage",
-                "assault_condition_hostage_loot",
                 "assault_condition_any",
                 "assault_condition_always"
             ],
             "value" : "assault_condition"
         },
         {
-            "type" : "multiple_choice",
-            "id" : "recon_assault_behaviour",
-            "title" : "recon_assault_behaviour_title",
-            "description" : "recon_assault_behaviour_desc",
-            "callback" : "clbk_recon_assault_behaviour",
-            "items" : [
-                "assault_behaviour_go",
-                "assault_behaviour_reenforce",
-                "assault_behaviour_go_else_reenforce",
-                "assault_behaviour_always_reenforce"
-            ],
-            "value" : "assault_behaviour"
+            "type" : "toggle",
+            "id" : "recon_allow_reinforce",
+            "title" : "recon_allow_reinforce_title",
+            "description" : "recon_allow_reinforce_desc",
+            "callback" : "clbk_recon_allow_reinforce",
+            "value" : "reinforce_allowed"
         }
     ]
 }

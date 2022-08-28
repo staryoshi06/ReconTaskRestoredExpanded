@@ -22,7 +22,7 @@ function StarReconMenu:Load()
     if not StarReconMenu._data.murky_set then StarReconMenu._data.murky_set = 1 end
     if not StarReconMenu._data.bronco_guy then StarReconMenu._data.bronco_guy = false end
     if not StarReconMenu._data.assault_condition then StarReconMenu._data.assault_condition = 1 end
-    if not StarReconMenu._data.assault_behaviour then StarReconMenu._data.assault_behaviour = 1 end
+    if not StarReconMenu._data.reinforce_allowed then StarReconMenu._data.reinforce_allowed = false end
 end
 
 Hooks:Add("LocalizationManagerPostInit", "star_recon_localise_menu", function( loc )
@@ -50,8 +50,8 @@ Hooks:Add( "MenuManagerInitialize", "star_recon_init_menu", function( menu_manag
         StarReconMenu:Save()
     end
 
-    MenuCallbackHandler.clbk_recon_assault_behaviour = function(self, item)
-        StarReconMenu._data.assault_behaviour = item:value()
+    MenuCallbackHandler.clbk_recon_allow_reinforce = function(self, item)
+        StarReconMenu._data.reinforce_allowed = (item:value() == "on" and true or false)
         StarReconMenu:Save()
     end
 

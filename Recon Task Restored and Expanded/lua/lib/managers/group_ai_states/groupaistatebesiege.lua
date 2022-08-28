@@ -8,10 +8,14 @@ function GroupAIStateBesiege:_begin_assault_task(assault_areas)
 
     old_begin_assault(self, assault_areas)
 
+    if not self._task_data.assault.extra_time then
+        self._task_data.assault.extra_time = 0
+    end
+
     -- remove delay
     if (not extend_anticipation) and (not self._hunt_mode) and self._task_data.assault.is_hesitating then
         self._task_data.assault.is_hesitating = nil
-        self._task_data.assault.phase_end_t = self._task_data.assault.phase_end_t - self:_get_difficulty_dependent_value(self._tweak_data.assault.hostage_hesitation_delay)
+        self._task_data.assault.phase_end_t = self._task_data.assault.phase_end_t - self:_get_difficulty_dependent_value(self._tweak_data.assault.hostage_hesitation_delay) + self._task_data.assault.extra_time
     end
 end
 
@@ -33,6 +37,10 @@ Hooks:PostHook(GroupAIStateBesiege, "_end_regroup_task", "star_recon_end_regroup
         if break_time < 60 then
             break_time = break_time + 5 * (self._hostage_headcount - 1)
             if break_time > 60 then break_time = 60 end
+        --if more than 60 already, clamp to 60 and add extra time to anticipation
+        elseif break_time > 60 then
+            assault_task.extra_time = break_time - 60
+            break_time = 60
         end
         assault_task.next_dispatch_t = self._t + break_time
         self._task_data.recon.break_extended = true
@@ -41,15 +49,13 @@ end)
 
 --menu stuff
 Hooks:PostHook(GroupAIStateBesiege, "init", "star_recon_ai_state_besiege_init", function(self, group_ai_state)
-    local menu_exists = (StarReconMenu and StarReconMenu._data.assault_behaviour and StarReconMenu._data.assault_condition)
+    local menu_exists = (StarReconMenu and StarReconMenu._data.assault_condition)
     -- These are for checking whether the appropriate functions should be called, to save on overhead if they aren't needed
-    self._goin_valid =  menu_exists and StarReconMenu._data.assault_behaviour ~= 2  and StarReconMenu._data.assault_condition > 1
-    self._reenforce_valid = menu_exists and StarReconMenu._data.assault_behaviour > 1
+    self._goin_valid =  menu_exists  and StarReconMenu._data.assault_condition > 1
     -- I could make settings changeable during a heist but that could damage performance if extra functions are being called so frequently, so I'd rather not
     -- Instead, we're setting it in stone at heist start.
     -- If enough people request it I might make it an option
     self._recon_assault_condition = StarReconMenu._data.assault_condition
-    self._recon_assault_behaviour = StarReconMenu._data.assault_behaviour
 end)
 
 function GroupAIStateBesiege:is_recon_allowed() 
@@ -59,31 +65,7 @@ function GroupAIStateBesiege:is_recon_allowed()
 
     local condition = self._recon_assault_condition
     
-    if condition > 3 or (condition > 2 and self._task_data.recon.loot_present) or (condition > 1 and self._hostage_headcount > 0) then
-        return true
-    end
-    return false
-end
-
-function GroupAIStateBesiege:is_reenforce_allowed()
-    if not self._recon_assault_behaviour then
-        return false
-    end
-
-    local behaviour = self._recon_assault_behaviour
-
-    if behaviour == 4 then
-        return true
-    end
-    
-    local recon_allowed = nil
-    if self.assault_condition == 4 then
-        recon_allowed = self._task_data.recon.valid_recon_objectives
-    else
-        recon_allowed = self:is_recon_allowed()
-    end
-
-    if self._task_data and self._task_data.assault.active and ((behaviour == 3 and not recon_allowed) or (behaviour == 2 and recon_allowed)) then
+    if condition > 2 or (condition > 1 and self._hostage_headcount > 0) then
         return true
     end
     return false
@@ -98,23 +80,8 @@ function GroupAIStateBesiege:_begin_new_tasks()
     local t = self._t
     local reenforce_candidates = nil
     local reenforce_data = task_data.reenforce
-    
-    local check_loot, check_valid_objs = nil
-    if self._recon_assault_condition then
-        if self._recon_assault_condition == 3 then
-            check_loot = true
-            if not self._task_data.recon.next_lootcheck_t then
-                self._task_data.recon.next_lootcheck_t = t
-            end
-        elseif self._recon_assault_condition == 4 and self._recon_assault_behaviour and (self._recon_assault_behaviour == 2 or self._recon_assault_behaviour == 3)  then
-            check_valid_objs = true
-            if not self._task_data.recon.next_objcheck_t then
-                self._task_data.recon.next_objcheck_t = t
-            end
-        end
-    end
 
-    if reenforce_data.next_dispatch_t and reenforce_data.next_dispatch_t < t and ((not self._reenforce_valid) or self:is_reenforce_allowed()) then
+    if reenforce_data.next_dispatch_t and reenforce_data.next_dispatch_t < t then
         reenforce_candidates = {}
     end
 
@@ -124,7 +91,7 @@ function GroupAIStateBesiege:_begin_new_tasks()
     -- new recon condition
     if recon_data.next_dispatch_t and recon_data.next_dispatch_t < t and not task_data.regroup.active and (not task_data.assault.active or (self._goin_valid and self:is_recon_allowed())) then
         recon_candidates = {}
-    elseif self._task_data.assault.active and self._task_data.recon.tasks[1] and recon_data.next_dispatch_t and recon_data.next_dispatch_t < t and not self:is_recon_allowed() then
+    elseif self._task_data.assault.active and self._task_data.recon.tasks[1] and recon_data.next_dispatch_t and recon_data.next_dispatch_t < t and (not self._goin_valid or not self:is_recon_allowed()) then
         self._task_data.recon.tasks = {}
     end
 
@@ -136,27 +103,6 @@ function GroupAIStateBesiege:_begin_new_tasks()
     end
 
     if not reenforce_candidates and not recon_candidates and not assault_candidates then
-        -- if necessary check for loot or valid recon objectives
-        if check_loot and recon_data.next_lootcheck_t and recon_data.next_lootcheck_t < t then
-            recon_data.loot_present = nil
-            recon_data.next_lootcheck_t = t + 10
-            for area_id, area in pairs(all_areas) do
-                if area.loot then
-                    recon_data.loot_present = true
-                    break
-                end
-            end
-        end
-        if check_valid_objs and recon_data.next_objcheck_t and recon_data.next_objcheck_t < t then
-            recon_data.valid_recon_objectives = nil
-            recon_data.next_objcheck_t = t + 10
-            for area_id, area in pairs(all_areas) do
-                if area.loot or area.hostages then
-                    recon_data.valid_recon_objectives = true
-                    break
-                end
-            end
-        end
         return
     end
 
@@ -283,15 +229,6 @@ function GroupAIStateBesiege:_begin_new_tasks()
             end
         end
 
-        if check_loot and area.loot then
-            recon_data.loot_present = true
-            recon_data.next_lootcheck_t = t + 10
-        end
-        if check_valid_objs and (area.loot or area.hostages) then
-            recon_data.valid_recon_objectives = true
-            recon_data.next_objcheck_t = t + 10
-        end
-
         i = i + 1
     until i > #to_search_areas
 
@@ -300,7 +237,7 @@ function GroupAIStateBesiege:_begin_new_tasks()
     end
 
     --prevent cheese tactic, if no recon objectives or tasks and assault break is extended, or recon is set to appear always, then set task on the player
-    if recon_candidates and not recon_candidates[1] and not recon_data.tasks[1] and (recon_data.break_extended or self._recon_assault_condition == 5) then
+    if recon_candidates and not recon_candidates[1] and not recon_data.tasks[1] and (recon_data.break_extended or self._recon_assault_condition == 4) then
         for criminal_key, criminal_data in pairs(self._char_criminals) do
             if not criminal_data.status then
                 local nav_seg = criminal_data.tracker:nav_segment()
@@ -450,15 +387,6 @@ function GroupAIStateBesiege:_upd_recon_tasks()
     end
 end
 
--- only retire if valid
-local old_retire_recon = GroupAIStateBesiege._assign_recon_groups_to_retire
-function GroupAIStateBesiege:_assign_recon_groups_to_retire()
-	if self._goin_valid and self:is_recon_allowed() then
-        return
-    end
-    old_retire_recon(self)
-end
-
 -- There's no reason for this to be setting the next dispatch, as upd_reenforce_tasks sets it already
 Hooks:PostHook(GroupAIStateBesiege, "_begin_reenforce_task", "star_recon_begin_reenforce_task", function(self, reenforce_area)
     if self._reenforce_valid then
@@ -466,41 +394,24 @@ Hooks:PostHook(GroupAIStateBesiege, "_begin_reenforce_task", "star_recon_begin_r
     end
 end)
 
---if adding reenforce then we only run this if they are allowed. otherwise run as normal for compatibility
-local old_upd_reenforce_tasks = GroupAIStateBesiege._upd_reenforce_tasks
-function GroupAIStateBesiege:_upd_reenforce_tasks() 
-    if (not self._reenforce_valid) or self:is_reenforce_allowed() then
-        old_upd_reenforce_tasks(self)
-    else
-        --retire all
-        if self._task_data and self._task_data.reenforce.active then
-            self._task_data.reenforce.active = nil
-            for group_id, group in pairs(self._groups) do
-                if group.objective.type == "reenforce_area" then
-                    if self._task_data and not self._task_data.assault.active or self._recon_assault_behaviour == 3 then
-                        group.objective.attitude = "avoid"
-                        group.objective.scan = true
-                        group.objective.stance = "hos"
-                        group.objective.type = "recon_area"
-                        self:_set_recon_objective_to_group(group)
-                        --If too far away then just retire
-                        if not group.objective.target_area or not group.objective.area or (mvector3.distance(group.objective.target_area.pos, group.objective.area.pos) > 5000 and not self._task_data.assault.active) then
-                            self:_assign_group_to_retire(group)
-                        end
-                    else
-                        self:_assign_group_to_retire(group)
-                    end
-                end
-            end
-            self._task_data.reenforce.tasks = {}
-        end
-    end
-end
-
 --have to redo this to prevent stuck map spawns from blocking recon from spawning
 function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 	local current_objective = group.objective
 	local target_area = current_objective.target_area or current_objective.area
+
+    --get tactics
+    local group_leader_u_key, group_leader_u_data = self._determine_group_leader(group.units)
+    local tactics_map = nil
+    if group_leader_u_data and group_leader_u_data.tactics then
+		tactics_map = {}
+
+		for _, tactic_name in ipairs(group_leader_u_data.tactics) do
+			tactics_map[tactic_name] = true
+		end
+    end
+
+    local coward = tactics_map and tactics_map.ranged_fire
+    local charge = tactics_map and tactics_map.charge
 
 	if not target_area.loot and not target_area.hostages or not current_objective.moving_out and current_objective.moved_in and group.in_place_t and self._t - group.in_place_t > 15 then
 		local recon_area = nil
@@ -510,6 +421,9 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 		local found_areas = {
 			[current_objective.area] = "init"
 		}
+
+        local backup_areas = {}
+        local are_backups_safe = nil
 
 		repeat
 			local search_area = table.remove(to_search_areas, 1)
@@ -529,8 +443,19 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 					occupied = true
 				end
 
-				if not occupied then
-					local is_area_safe = not next(search_area.criminal.units)
+                local is_area_safe = not next(search_area.criminal.units)
+
+				if occupied then
+                    --if all areas are occupied we assign new tasks to those areas
+                    if is_area_safe and not are_backups_safe then
+                        backup_areas = {
+                            search_area
+                        }
+                        are_backups_safe = true
+                    else
+                        table.insert(backup_areas, search_area)
+                    end
+                else
 
 					if is_area_safe then
 						recon_area = search_area
@@ -553,8 +478,12 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 			end
 		until #to_search_areas == 0
 
+        if not recon_area and #backup_areas > 0 then
+            recon_area = backup_areas[math.random(#backup_areas)]
+        end
+
         -- if valid action then reassign the recon to attack the player if they are at their objective
-        if not recon_area and (self._task_data.recon.break_extended or self._recon_assault_condition == 5) and not current_objective.moving_out and current_objective.moved_in then
+        if not recon_area and (self._task_data.recon.break_extended or self._recon_assault_condition == 4 or self._task_data.assault.is_first) and not current_objective.moving_out and current_objective.moved_in then
             local candidates = {}
             for area, _ in pairs(found_areas) do
                 if next(area.criminal.units) then
@@ -589,7 +518,7 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 				pose = "stand",
 				type = "recon_area",
 				stance = "hos",
-				attitude = "avoid",
+				attitude = charge and "engage" or "avoid",
 				area = current_objective.area,
 				target_area = recon_area,
 				coarse_path = coarse_path
@@ -598,9 +527,14 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 			self:_set_objective_to_enemy_group(group, grp_objective)
 
 			current_objective = group.objective
-        elseif current_objective and not current_objective.stance then
+        elseif current_objective and not current_objective.assigned_t or self._t > current_objective.assigned_t + 10 then
             --STUCK
-            current_objective.type = "defend_area" --retires asap while not contributing to recon or assault force
+            if (not current_objective.assigned_t) then
+                current_objective.assigned_t = self._t
+            else
+                current_objective.type = "defend_area" --retires asap while not contributing to recon or assault force
+                --log("RTRE: Unit stuck, retiring asap")
+            end
 		end
 	end
 
@@ -610,15 +544,16 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 
 			if forwardmost_i_nav_point and forwardmost_i_nav_point > 1 then
 				for i = forwardmost_i_nav_point + 1, #current_objective.coarse_path do
-					local nav_point = current_objective.coarse_path[forwardmost_i_nav_point]
+                    --fixing bug where recon doesn't appropriately try to avoid player.
+					local nav_point = current_objective.coarse_path[i]
 
 					if not self:is_nav_seg_safe(nav_point[1]) then
-						for i = 0, #current_objective.coarse_path - forwardmost_i_nav_point do
+						for _ = 0, #current_objective.coarse_path - i do
 							table.remove(current_objective.coarse_path)
 						end
 
 						local grp_objective = {
-							attitude = "avoid",
+							attitude = charge and "engage" or "avoid",
 							scan = true,
 							pose = "stand",
 							type = "recon_area",
@@ -635,11 +570,50 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 			end
 		end
 
+        -- after spawning
 		if not current_objective.moving_out and not current_objective.area.neighbours[current_objective.target_area.id] then
+            -- check for alternate path if flanking and target area contains players.
+            local alt_area = nil
+            if tactics_map and tactics_map.flank and next(current_objective.target_area.criminal.units) then
+                local alt_areas = {}
+                for area_id, enter_from_area in pairs(current_objective.target_area.neighbours) do
+                    local enter_from_here = true
+                    --go around assault units if possible
+                    local cop_units = enter_from_area.police.units
+                    for u_key, u_data in pairs(cop_units) do
+                        if u_data.group and u_data.group ~= group and u_data.group.objective.type == "assault_area" then
+                            enter_from_here = false
+                            break
+                        end
+                    end
+                    if enter_from_here then
+                        --check if other groups are attacking from that point. if so, we want to attack somewhere else
+                        for group_id, group in pairs(self._groups) do
+                            if group.objective and group.objective.target_area == current_objective.target_area and group.objective.coarse_path then
+                                local other_path = group.objective.coarse_path
+                                local attack_point = other_path[#other_path][1]
+                                if attack_point == current_objective.target_area.pos_nav_seg then
+                                    attack_point = other_path[#other_path - 1][1]
+                                end
+                                if enter_from_area.pos_nav_seg == attack_point then
+                                    enter_from_here = false
+                                    break
+                                end
+                            end
+                        end
+                    end
+                    if enter_from_here then
+                        table.insert(alt_areas, enter_from_area)
+                    end
+                end
+                if next(alt_areas) then
+                    alt_area = alt_areas[math.random(#alt_areas)]
+                end
+            end
 			local search_params = {
 				id = "GroupAI_recon",
 				from_seg = current_objective.area.pos_nav_seg,
-				to_seg = current_objective.target_area.pos_nav_seg,
+				to_seg = alt_area and alt_area.pos_nav_seg or current_objective.target_area.pos_nav_seg,
 				access_pos = self._get_group_acces_mask(group),
 				verify_clbk = callback(self, self, "is_nav_seg_safe")
 			}
@@ -647,14 +621,16 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 
 			if coarse_path then
 				self:_merge_coarse_path_by_area(coarse_path)
-				table.remove(coarse_path)
+                if not alt_area then
+				    table.remove(coarse_path)
+                end
 
 				local grp_objective = {
 					scan = true,
 					pose = "stand",
 					type = "recon_area",
 					stance = "hos",
-					attitude = "avoid",
+					attitude = charge and "engage" or "avoid",
 					area = self:get_area_from_nav_seg_id(coarse_path[#coarse_path][1]),
 					target_area = current_objective.target_area,
 					coarse_path = coarse_path
@@ -668,9 +644,9 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 			local grp_objective = {
 				stance = "hos",
 				scan = true,
-				pose = "crouch",
+				pose = charge and "stand" or "crouch",
 				type = "recon_area",
-				attitude = "avoid",
+				attitude = charge and "engage" or "avoid",
 				area = current_objective.target_area
 			}
 
@@ -689,6 +665,11 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 			end
 		end
 	end
+
+    local grp_obj = group.objective   
+    grp_obj.stance = (grp_obj.area and next(grp_obj.area.criminal.units)) and "cbt" or "hos"
+    grp_obj.attitude = coward and "avoid" or "engage"
+    grp_obj.pose = charge and "stand" or "crouch"
 end
 
 Hooks:PostHook(GroupAIStateBesiege, "_assign_group_to_retire", "star_recon_retire_group", function(self, group)
@@ -697,3 +678,69 @@ Hooks:PostHook(GroupAIStateBesiege, "_assign_group_to_retire", "star_recon_retir
         group.objective.type = "defend_area"
     end
 end)
+
+--fix retirement
+function GroupAIStateBesiege:_assign_recon_groups_to_retire()
+    --allow recon if valid
+    if self._goin_valid and self:is_recon_allowed() then
+        return
+    end
+	local function suitable_grp_func(group)
+		if group.objective.type == "recon_area" then
+			local grp_objective = {
+				stance = "hos",
+				attitude = "avoid",
+				pose = "crouch",
+				type = "assault_area",
+				area = group.objective.area
+			}
+
+			self:_set_objective_to_enemy_group(group, grp_objective)
+		end
+	end
+
+	self:_assign_groups_to_retire(self._tweak_data.assault.groups, suitable_grp_func, "assault_area")
+end
+
+function GroupAIStateBesiege:_assign_assault_groups_to_retire()
+	local function suitable_grp_func(group)
+		if group.objective.type == "assault_area" then
+			local regroup_area = nil
+
+			if next(group.objective.area.criminal.units) then
+				for other_area_id, other_area in pairs(group.objective.area.neighbours) do
+					if not next(other_area.criminal.units) then
+						regroup_area = other_area
+
+						break
+					end
+				end
+			end
+
+			regroup_area = regroup_area or group.objective.area
+			local grp_objective = {
+				stance = "hos",
+				attitude = "avoid",
+				pose = "crouch",
+				type = "recon_area",
+				area = regroup_area
+			}
+
+			self:_set_objective_to_enemy_group(group, grp_objective)
+		end
+	end
+
+	self:_assign_groups_to_retire(self._tweak_data.recon.groups, suitable_grp_func, "recon_area")
+end
+
+function GroupAIStateBesiege:_assign_groups_to_retire(allowed_groups, suitable_grp_func, allowed_task)
+	for group_id, group in pairs(self._groups) do
+        if group.objective.type ~= "reenforce_area" and group.objective.type ~= "retire" and group.objective.type ~= allowed_task then 
+            if not allowed_groups[group.type] then
+                self:_assign_group_to_retire(group)
+            elseif suitable_grp_func and allowed_groups[group.type] then
+                suitable_grp_func(group)
+            end
+        end
+	end
+end
