@@ -345,7 +345,13 @@ function GroupAIStateBesiege:_upd_recon_tasks()
                     stance = "hos",
                     type = "recon_area",
                     area = spawn_group.area,
-                    target_area = task_data.target_area
+                    target_area = task_data.target_area,
+                    coarse_path = {
+                        {
+                            spawn_group.area.pos_nav_seg,
+                            spawn_group.area.pos
+                        }
+                    }
                 }
 
                 self:_spawn_in_group(spawn_group, spawn_group_type, grp_objective)
@@ -515,10 +521,11 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 
 			local grp_objective = {
 				scan = true,
-				pose = "stand",
+				pose = coward and "crouch" or "stand",
 				type = "recon_area",
 				stance = "hos",
 				attitude = charge and "engage" or "avoid",
+                interrupt_dis = coward and 800 or nil,
 				area = current_objective.area,
 				target_area = recon_area,
 				coarse_path = coarse_path
@@ -555,9 +562,10 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 						local grp_objective = {
 							attitude = charge and "engage" or "avoid",
 							scan = true,
-							pose = "stand",
+							pose = coward and "crouch" or "stand",
 							type = "recon_area",
 							stance = "hos",
+                            interrupt_dis = coward and 800 or nil,
 							area = self:get_area_from_nav_seg_id(current_objective.coarse_path[#current_objective.coarse_path][1]),
 							target_area = current_objective.target_area
 						}
@@ -592,7 +600,7 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
                             if group.objective and group.objective.target_area == current_objective.target_area and group.objective.coarse_path then
                                 local other_path = group.objective.coarse_path
                                 local attack_point = other_path[#other_path][1]
-                                if attack_point == current_objective.target_area.pos_nav_seg then
+                                if attack_point == current_objective.target_area.pos_nav_seg and #other_path > 1 then
                                     attack_point = other_path[#other_path - 1][1]
                                 end
                                 if enter_from_area.pos_nav_seg == attack_point then
@@ -627,10 +635,11 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 
 				local grp_objective = {
 					scan = true,
-					pose = "stand",
+					pose = coward and "crouch" or "stand",
 					type = "recon_area",
 					stance = "hos",
 					attitude = charge and "engage" or "avoid",
+                    interrupt_dis = coward and 800 or nil,
 					area = self:get_area_from_nav_seg_id(coarse_path[#coarse_path][1]),
 					target_area = current_objective.target_area,
 					coarse_path = coarse_path
@@ -641,12 +650,14 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 		end
 
 		if not current_objective.moving_out and current_objective.area.neighbours[current_objective.target_area.id] then
+            local area_hostile = next(current_objective.target_area.criminal.units)
 			local grp_objective = {
-				stance = "hos",
+				stance = area_hostile and "cbt" or "hos",
 				scan = true,
 				pose = charge and "stand" or "crouch",
 				type = "recon_area",
-				attitude = charge and "engage" or "avoid",
+				attitude = coward and "avoid" or "engage",
+                interrupt_dis = coward and 800 or nil,
 				area = current_objective.target_area
 			}
 
@@ -655,7 +666,7 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 			group.objective.moving_in = true
 			group.objective.moved_in = true
 
-			if next(current_objective.target_area.criminal.units) then
+			if area_hostile then
 				self:_chk_group_use_smoke_grenade(group, {
 					use_smoke = true,
 					target_areas = {
@@ -665,11 +676,6 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 			end
 		end
 	end
-
-    local grp_obj = group.objective   
-    grp_obj.stance = (grp_obj.area and next(grp_obj.area.criminal.units)) and "cbt" or "hos"
-    grp_obj.attitude = coward and "avoid" or "engage"
-    grp_obj.pose = charge and "stand" or "crouch"
 end
 
 Hooks:PostHook(GroupAIStateBesiege, "_assign_group_to_retire", "star_recon_retire_group", function(self, group)
