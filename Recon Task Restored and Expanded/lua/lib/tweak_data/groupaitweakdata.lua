@@ -14,7 +14,7 @@ function GroupAITweakData:getHeistType()
         return "la"
     elseif level_id == "chas" or level_id == "sand" or level_id == "pent" then
         return "sanfran"
-    elseif level_id == "ranc" then
+    elseif level_id == "ranc" or level_id == "corp" then
         return "texas"
     else
         return "normal"

@@ -3,7 +3,7 @@
 	"description" : "Readds custom units for the recon forces between assaults. Also makes them spawn faster, and extends assault breaks if hostages are present, instead of anticipation (outside of first assault and holdout)",
 	"author" : "staryoshi06",
 	"contact" : "https://modworkshop.net/user/28039",
-	"version" : "2.0.1",
+	"version" : "2.0.2",
 	"blt_version": 2,
 	"priority" : "50",
 	"hooks" :
