@@ -85,7 +85,11 @@ function GroupAIStateBesiege:_begin_new_tasks()
         reenforce_candidates = {}
     end
 
-    local recon_candidates, are_recon_candidates_safe = nil
+    local recon_candidates = nil
+    local recon_candidates_are_safe = nil
+    local backup_recon_candidates = {}
+    local backup_recon_candidates_are_safe = nil
+    local criminal_areas = {}
     local recon_data = task_data.recon
 
     -- new recon condition
@@ -164,6 +168,7 @@ function GroupAIStateBesiege:_begin_new_tasks()
         for criminal_key, _ in pairs(area.criminal.units) do
             if not self._criminals[criminal_key].status and not self._criminals[criminal_key].is_deployable then
                 criminal_character_in_area = true
+                table.insert(criminal_areas, area)
 
                 break
             end
@@ -187,30 +192,50 @@ function GroupAIStateBesiege:_begin_new_tasks()
 
         if recon_candidates and (area.loot or area.hostages) then
             local occupied = nil
+            local awaiting_dispatch = nil
 
             -- check if there is already a queued task for this area
             for task_id, task in pairs(self._task_data.recon.tasks) do
                 if task.target_area == area then
-                    occupied = true
+                    awaiting_dispatch = true
 
                     break
                 end
             end
 
-            if not occupied then
+            -- do not readd tasks for areas already waiting for a recon group
+            if not awaiting_dispatch then
+                --check if recon team is already in or approaching this area
+                for test_group_id, test_group in pairs(self._groups) do
+                    if test_group ~= group and test_group.objective.type == "recon_area" and (test_group.objective.target_area == area or test_group.objective.area == area) then
+                        occupied = true
+
+                        break
+                    end
+                end
+
                 local is_area_safe = nr_criminals == 0
 
-                if is_area_safe then
-                    if are_recon_candidates_safe then
-                        table.insert(recon_candidates, area)
+                if occupied then
+                    --if all areas are occupied we assign new tasks to those areas
+                    if is_area_safe and not backup_recon_candidates_are_safe then
+                        backup_recon_candidates = {
+                            area
+                        }
+                        backup_recon_candidates_are_safe = true
                     else
-                        are_recon_candidates_safe = true
+                        table.insert(backup_recon_candidates, area)
+                    end
+                else
+
+                    if is_area_safe and not recon_candidates then
                         recon_candidates = {
                             area
                         }
+                        recon_candidates_are_safe = true
+                    else
+                        table.insert(recon_candidates, area)
                     end
-                elseif not are_recon_candidates_safe then
-                    table.insert(recon_candidates, area)
                 end
             end
         end
@@ -236,15 +261,25 @@ function GroupAIStateBesiege:_begin_new_tasks()
         recon_data.break_extended = nil
     end
 
+    if recon_candidates and #recon_candidates == 0 then
+        recon_candidates = backup_recon_candidates
+        recon_candidates_are_safe = backup_recon_candidates_are_safe
+    end
+
     --prevent cheese tactic, if no recon objectives or tasks and assault break is extended, or recon is set to appear always, then set task on the player
     if recon_candidates and not recon_candidates[1] and not recon_data.tasks[1] and (recon_data.break_extended or self._recon_assault_condition == 4) then
-        for criminal_key, criminal_data in pairs(self._char_criminals) do
-            if not criminal_data.status then
-                local nav_seg = criminal_data.tracker:nav_segment()
-                local area = self:get_area_from_nav_seg_id(nav_seg)
+        recon_candidates_are_safe = false
+        if assault_candidates then
+            recon_candidates = assault_candidates
+        else
+            for criminal_key, criminal_data in pairs(self._char_criminals) do
+                if not criminal_data.status then
+                    local nav_seg = criminal_data.tracker:nav_segment()
+                    local area = self:get_area_from_nav_seg_id(nav_seg)
 
 
-                table.insert(recon_candidates, area)
+                    table.insert(recon_candidates, area)
+                end
             end
         end
     end
@@ -257,8 +292,57 @@ function GroupAIStateBesiege:_begin_new_tasks()
     end
 
     if recon_candidates and #recon_candidates > 0 then
-        local recon_area = recon_candidates[math.random(#recon_candidates)]
+        -- if no safe areas, then define safe areas as areas with lowest criminals
+        if not recon_candidates_are_safe then
+            -- find lowest criminal count
+            local lowest_nr_criminals = nil
+            for _, area in pairs(criminal_areas) do
+                local nr_criminals = table.size(area.criminal.units)
+                if not lowest_nr_criminals or nr_criminals < lowest_nr_criminals then
+                    lowest_nr_criminals = nr_criminals
+                end
+            end
+            -- find areas with a higher count
+            local higher_criminal_areas = {}
+            for _, area in pairs(criminal_areas) do
+                if table.size(area.criminal.units) > lowest_nr_criminals then
+                    table.insert(higher_criminal_areas, area)
+                end
+            end
 
+            -- criminal areas (aka areas to avoid) are now areas with higher criminal counts
+            if #higher_criminal_areas < #recon_candidates then
+                recon_candidates_are_safe = true
+                criminal_areas = higher_criminal_areas
+            end
+        end
+
+        if recon_candidates_are_safe then
+            local furthest_area = nil
+            local furthest_area_dist = nil
+            -- prioritise furthest area from criminals
+            for _, area in pairs(recon_candidates) do
+                -- to determine furthest area, we find the distance from the closest area containing criminals
+                local closest_c_area_dist = nil
+                for _, c_area in pairs(criminal_areas) do
+                    if c_area == area then
+                        closest_c_area_dist = 0
+                        break
+                    end
+                    local dist = mvector3.distance_sq(area.pos, c_area.pos)
+                    if not closest_c_area_dist or dist < closest_c_area_dist then
+                        closest_c_area_dist = dist
+                    end
+                end
+                if not furthest_area_dist or closest_c_area_dist > furthest_area_dist then 
+                    furthest_area = area
+                    furthest_area_dist = closest_c_area_dist
+                end
+            end
+            recon_area = furthest_area
+        else
+            recon_area = recon_candidates[math.random(#recon_candidates)]
+        end
         self:_begin_recon_task(recon_area)
     end
 
@@ -284,6 +368,19 @@ function GroupAIStateBesiege:_count_recon_force()
     return amount
 end
 
+function GroupAIStateBesiege:_begin_recon_task(recon_area)
+	local new_task = {
+		use_smoke = true,
+		use_spawn_event = true,
+		target_area = recon_area,
+		start_t = self._t
+	}
+
+	table.insert(self._task_data.recon.tasks, new_task)
+
+	-- OVERKILL ARE YOU STUPID???
+end
+
 --Have to redefine this one
 function GroupAIStateBesiege:_upd_recon_tasks()
     local task_data = self._task_data.recon.tasks[1]
@@ -293,7 +390,7 @@ function GroupAIStateBesiege:_upd_recon_tasks()
     local t = self._t
 
     if not task_data then
-        --sometimes next dispatch is set to nil and then the tasks are cleared. unsure how but this should fix it
+        --If recon isn't dispatched yet
         if not self._task_data.recon.next_dispatch_t then
             self._task_data.recon.next_dispatch_t = t
         end
@@ -400,7 +497,6 @@ Hooks:PostHook(GroupAIStateBesiege, "_begin_reenforce_task", "star_recon_begin_r
     end
 end)
 
---have to redo this to prevent stuck map spawns from blocking recon from spawning
 function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 	local current_objective = group.objective
 	local target_area = current_objective.target_area or current_objective.area
@@ -419,7 +515,11 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
     local coward = tactics_map and tactics_map.ranged_fire
     local charge = tactics_map and tactics_map.charge
 
-	if not target_area.loot and not target_area.hostages or not current_objective.moving_out and current_objective.moved_in and group.in_place_t and self._t - group.in_place_t > 15 then
+    --TODO: global setting
+    local crim_obj_allowed = (self._task_data.recon.break_extended or self._recon_assault_condition == 4 or self._task_data.assault.is_first)
+    local crims_at_obj = (current_objective.target_area and not next(current_objective.target_area.criminal.units) or not next(current_objective.area.criminal.units))
+
+	if not target_area.loot and not target_area.hostages and (not crim_obj_allowed or not self._recon_obj_count) or not current_objective.moving_out and current_objective.moved_in and group.in_place_t and self._t - group.in_place_t > 15 then
 		local recon_area = nil
 		local to_search_areas = {
 			current_objective.area
@@ -428,8 +528,11 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 			[current_objective.area] = "init"
 		}
 
+        local areas_to_investigate = {}
+        local areas_are_safe = nil
         local backup_areas = {}
-        local are_backups_safe = nil
+        local backup_areas_are_safe = nil
+        local criminal_areas = {}
 
 		repeat
 			local search_area = table.remove(to_search_areas, 1)
@@ -438,7 +541,7 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 				local occupied = nil
 
 				for test_group_id, test_group in pairs(self._groups) do
-					if test_group ~= group and (test_group.objective.target_area == search_area or test_group.objective.area == search_area) then
+					if test_group ~= group and test_group.objective.type == "recon_area" and (test_group.objective.target_area == search_area or test_group.objective.area == search_area) then
 						occupied = true
 
 						break
@@ -453,51 +556,119 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 
 				if occupied then
                     --if all areas are occupied we assign new tasks to those areas
-                    if is_area_safe and not are_backups_safe then
+                    if is_area_safe and not backup_areas_are_safe then
                         backup_areas = {
                             search_area
                         }
-                        are_backups_safe = true
+                        backup_areas_are_safe = true
                     else
                         table.insert(backup_areas, search_area)
                     end
                 else
 
-					if is_area_safe then
-						recon_area = search_area
-
-						break
-					else
-						recon_area = recon_area or search_area
-					end
+					if is_area_safe and not areas_are_safe then
+                        areas_to_investigate = {
+                            search_area
+                        }
+                        areas_are_safe = true
+                    else
+                        table.insert(areas_to_investigate, search_area)
+                    end
 				end
+
+                if not is_area_safe then
+                    table.insert(criminal_areas, search_area)
+                end
 			end
 
-			if not next(search_area.criminal.units) then
-				for other_area_id, other_area in pairs(search_area.neighbours) do
-					if not found_areas[other_area] then
-						table.insert(to_search_areas, other_area)
+            for other_area_id, other_area in pairs(search_area.neighbours) do
+                if not found_areas[other_area] then
+                    table.insert(to_search_areas, other_area)
 
-						found_areas[other_area] = search_area
-					end
-				end
-			end
-		until #to_search_areas == 0
-
-        if not recon_area and #backup_areas > 0 then
-            recon_area = backup_areas[math.random(#backup_areas)]
-        end
-
-        -- if valid action then reassign the recon to attack the player if they are at their objective
-        if not recon_area and (self._task_data.recon.break_extended or self._recon_assault_condition == 4 or self._task_data.assault.is_first) and not current_objective.moving_out and current_objective.moved_in then
-            local candidates = {}
-            for area, _ in pairs(found_areas) do
-                if next(area.criminal.units) then
-                    table.insert(candidates, area)
+                    found_areas[other_area] = search_area
                 end
             end
-            if #candidates > 0 then
-                recon_area = candidates[math.random(#candidates)]
+		until #to_search_areas == 0
+
+        -- if no free objectives, then go to objectives which already have assigned recon
+        if #areas_to_investigate == 0 and #backup_areas > 0 then
+            areas_to_investigate = backup_areas
+            areas_are_safe = backup_areas_are_safe
+        end
+
+        -- if allowing recon task to set objective on criminals, not already fighting criminals and no there are no normal objectives, then go to criminal objectives 
+        if crim_obj_allowed and #areas_to_investigate == 0 and crims_at_obj and #criminal_areas > 0 then
+            areas_to_investigate = criminal_areas
+            areas_are_safe = 0
+        end
+
+        if #areas_to_investigate > 0 then
+            -- if no safe areas, then define safe areas as areas with lowest criminals
+            if not areas_are_safe then
+                -- find lowest criminal count
+                local lowest_nr_criminals = nil
+                for _, area in pairs(criminal_areas) do
+                    local nr_criminals = table.size(area.criminal.units)
+                    if not lowest_nr_criminals or nr_criminals < lowest_nr_criminals then
+                        lowest_nr_criminals = nr_criminals
+                    end
+                end
+                -- find areas with a higher count
+                local higher_criminal_areas = {}
+                for _, area in pairs(criminal_areas) do
+                    if table.size(area.criminal.units) > lowest_nr_criminals then
+                        table.insert(higher_criminal_areas, area)
+                    end
+                end
+
+                if #higher_criminal_areas < #areas_to_investigate then
+                    areas_are_safe = true
+                    criminal_areas = higher_criminal_areas
+                end
+            end
+
+            --prioritise areas close to the group
+            local closest_area_dist = nil
+            local area_dists = {} -- list of areas and their dists
+            for _, area in pairs(areas_to_investigate) do
+                local dist = mvector3.distance_sq(area.pos, current_objective.area.pos)
+                if not closest_area_dist or closest_area_dist > dist then
+                    closest_area_dist = dist
+                    area_dists[area] = dist
+                end
+            end
+            local areas_to_investigate = {}
+            for area, dist in pairs(area_dists) do
+                if dist - closest_area_dist <= 1000000 then -- 10 metres squared distance from shortest distance
+                    table.insert(areas_to_investigate, area)
+                end
+            end
+
+            if areas_are_safe then
+                local furthest_area = nil
+                local furthest_area_dist = nil
+                -- prioritise furthest area from criminals
+                for _, area in pairs(areas_to_investigate) do
+                    -- to determine furthest area, we find the distance from the closest area containing criminals
+                    local closest_c_area_dist = nil
+                    for _, c_area in pairs(criminal_areas) do
+                        if c_area == area then
+                            closest_c_area_dist = 0
+                            break
+                        end
+                        local dist = mvector3.distance_sq(area.pos, c_area.pos)
+                        if not closest_c_area_dist or dist < closest_c_area_dist then
+                            closest_c_area_dist = dist
+                        end
+                    end
+                    if not furthest_area_dist or closest_c_area_dist > furthest_area_dist then 
+                        furthest_area = area
+                        furthest_area_dist = closest_c_area_dist
+                    end
+                end
+                recon_area = furthest_area
+            else
+                recon_area = areas_to_investigate[math.random(#areas_to_investigate)]
             end
         end
 
@@ -534,9 +705,10 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 			self:_set_objective_to_enemy_group(group, grp_objective)
 
 			current_objective = group.objective
-        elseif current_objective and not current_objective.assigned_t or self._t > current_objective.assigned_t + 10 then
+        elseif current_objective and (not crim_obj_allowed or not crims_at_obj) and not current_objective.assigned_t or self._t > current_objective.assigned_t + 10 then
             --STUCK
             if (not current_objective.assigned_t) then
+                --loud might have just started, wait a few seconds
                 current_objective.assigned_t = self._t
             else
                 current_objective.type = "defend_area" --retires asap while not contributing to recon or assault force
@@ -551,16 +723,15 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 
 			if forwardmost_i_nav_point and forwardmost_i_nav_point > 1 then
 				for i = forwardmost_i_nav_point + 1, #current_objective.coarse_path do
-                    --fixing bug where recon doesn't appropriately try to avoid player.
 					local nav_point = current_objective.coarse_path[i]
 
 					if not self:is_nav_seg_safe(nav_point[1]) then
-						for _ = 0, #current_objective.coarse_path - i do
+						for j = 0, #current_objective.coarse_path - forwardmost_i_nav_point do
 							table.remove(current_objective.coarse_path)
 						end
 
 						local grp_objective = {
-							attitude = charge and "engage" or "avoid",
+							attitude = charge and "engage" or "avoid", -- TODO: probably change
 							scan = true,
 							pose = coward and "crouch" or "stand",
 							type = "recon_area",
@@ -656,7 +827,7 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 				scan = true,
 				pose = charge and "stand" or "crouch",
 				type = "recon_area",
-				attitude = coward and "avoid" or "engage",
+				attitude = coward and "avoid" or "engage", -- TODO: probably change
                 interrupt_dis = coward and 800 or nil,
 				area = current_objective.target_area
 			}
@@ -748,5 +919,275 @@ function GroupAIStateBesiege:_assign_groups_to_retire(allowed_groups, suitable_g
                 suitable_grp_func(group)
             end
         end
+	end
+end
+
+
+
+--DEBUG
+
+
+Hooks:PreHook(GroupAIStateBesiege, "init", "star_recon_ai_state_besiege_init_debug", function(self, group_ai_state)
+    self:set_debug_draw_state(true)
+end)
+
+function GroupAIStateBesiege:_draw_enemy_activity(t)
+	local draw_data = self._AI_draw_data
+	local brush_area = draw_data.brush_area
+	local area_normal = -math.UP
+	local logic_name_texts = draw_data.logic_name_texts
+	local group_id_texts = draw_data.group_id_texts
+	local panel = draw_data.panel
+	local camera = managers.viewport:get_current_camera()
+
+	if not camera then
+		return
+	end
+
+	local ws = draw_data.workspace
+	local mid_pos1 = Vector3()
+	local mid_pos2 = Vector3()
+	local focus_enemy_pen = draw_data.pen_focus_enemy
+	local focus_player_brush = draw_data.brush_focus_player
+	local suppr_period = 0.4
+	local suppr_t = t % suppr_period
+
+	if suppr_t > suppr_period * 0.5 then
+		suppr_t = suppr_period - suppr_t
+	end
+
+	draw_data.brush_suppressed:set_color(Color(math.lerp(0.2, 0.5, suppr_t), 0.85, 0.9, 0.2))
+
+	for area_id, area in pairs(self._area_data) do
+		if table.size(area.police.units) > 0 then
+			brush_area:half_sphere(area.pos, 22, area_normal)
+		end
+	end
+
+	local function _f_draw_logic_name(u_key, l_data, draw_color)
+		local logic_name_text = logic_name_texts[u_key]
+		local text_str = l_data.name
+
+		if l_data.objective then
+			text_str = text_str .. ":" .. l_data.objective.type
+		end
+
+		if not l_data.group and l_data.team then
+			text_str = l_data.team.id .. ":" .. text_str
+		end
+
+		if l_data.spawned_in_phase then
+			text_str = text_str .. ":" .. l_data.spawned_in_phase
+		end
+
+		if l_data.unit:anim_state_machine() then
+			text_str = text_str .. ":animation( " .. l_data.unit:anim_state_machine():segment_state(Idstring("base")) .. " )"
+		end
+
+		if logic_name_text then
+			logic_name_text:set_text(text_str)
+		else
+			logic_name_text = panel:text({
+				name = "text",
+				font_size = 20,
+				layer = 1,
+				text = text_str,
+				font = tweak_data.hud.medium_font,
+				color = draw_color
+			})
+			logic_name_texts[u_key] = logic_name_text
+		end
+
+		local my_head_pos = mid_pos1
+
+		mvector3.set(my_head_pos, l_data.unit:movement():m_head_pos())
+		mvector3.set_z(my_head_pos, my_head_pos.z + 30)
+
+		local my_head_pos_screen = camera:world_to_screen(my_head_pos)
+
+		if my_head_pos_screen.z > 0 then
+			local screen_x = (my_head_pos_screen.x + 1) * 0.5 * RenderSettings.resolution.x
+			local screen_y = (my_head_pos_screen.y + 1) * 0.5 * RenderSettings.resolution.y
+
+			logic_name_text:set_x(screen_x)
+			logic_name_text:set_y(screen_y)
+
+			if not logic_name_text:visible() then
+				logic_name_text:show()
+			end
+		elseif logic_name_text:visible() then
+			logic_name_text:hide()
+		end
+	end
+
+	local function _f_draw_obj_pos(unit)
+		local brush = nil
+		local objective = unit:brain():objective()
+		local objective_type = objective and objective.type
+
+		if objective_type == "guard" then
+			brush = draw_data.brush_guard
+		elseif objective_type == "defend_area" then
+			brush = draw_data.brush_defend
+		elseif objective_type == "free" or objective_type == "follow" or objective_type == "surrender" then
+			brush = draw_data.brush_free
+		elseif objective_type == "act" then
+			brush = draw_data.brush_act
+		else
+			brush = draw_data.brush_misc
+		end
+
+		local obj_pos = nil
+
+		if objective then
+			if objective.pos then
+				obj_pos = objective.pos
+			elseif objective.follow_unit then
+				obj_pos = objective.follow_unit:movement():m_head_pos()
+
+				if objective.follow_unit:base().is_local_player then
+					obj_pos = obj_pos + math.UP * -30
+				end
+			elseif objective.nav_seg then
+				obj_pos = managers.navigation._nav_segments[objective.nav_seg].pos
+			elseif objective.area then
+				obj_pos = objective.area.pos
+			end
+		end
+
+		if obj_pos then
+			local u_pos = unit:movement():m_com()
+
+			brush:cylinder(u_pos, obj_pos, 4, 3)
+			brush:sphere(u_pos, 24)
+		end
+
+		if unit:brain()._logic_data.is_suppressed then
+			mvector3.set(mid_pos1, unit:movement():m_pos())
+			mvector3.set_z(mid_pos1, mid_pos1.z + 220)
+			draw_data.brush_suppressed:cylinder(unit:movement():m_pos(), mid_pos1, 35)
+		end
+	end
+
+	local group_center = Vector3()
+
+	for group_id, group in pairs(self._groups) do
+		local nr_units = 0
+
+		for u_key, u_data in pairs(group.units) do
+			nr_units = nr_units + 1
+
+			mvector3.add(group_center, u_data.unit:movement():m_com())
+		end
+
+		if nr_units > 0 then
+			mvector3.divide(group_center, nr_units)
+
+			local gui_text = group_id_texts[group_id]
+			local group_pos_screen = camera:world_to_screen(group_center)
+
+			if group_pos_screen.z > 0 then
+				if not gui_text then
+					gui_text = panel:text({
+						name = "text",
+						font_size = 24,
+						layer = 2,
+						text = group.team.id .. ":" .. group_id .. ":" .. group.objective.type,
+						font = tweak_data.hud.medium_font,
+						color = draw_data.group_id_color
+					})
+					group_id_texts[group_id] = gui_text
+				end
+
+				local screen_x = (group_pos_screen.x + 1) * 0.5 * RenderSettings.resolution.x
+				local screen_y = (group_pos_screen.y + 1) * 0.5 * RenderSettings.resolution.y
+
+				gui_text:set_x(screen_x)
+				gui_text:set_y(screen_y)
+
+				if not gui_text:visible() then
+					gui_text:show()
+				end
+			elseif gui_text and gui_text:visible() then
+				gui_text:hide()
+			end
+
+			for u_key, u_data in pairs(group.units) do
+				draw_data.pen_group:line(group_center, u_data.unit:movement():m_com())
+			end
+		end
+
+		mvector3.set_zero(group_center)
+	end
+
+	local function _f_draw_attention_on_player(l_data)
+		if l_data.attention_obj then
+			local my_head_pos = l_data.unit:movement():m_head_pos()
+			local e_pos = l_data.attention_obj.m_head_pos
+			local dis = mvector3.distance(my_head_pos, e_pos)
+
+			mvector3.step(mid_pos2, my_head_pos, e_pos, 300)
+			mvector3.lerp(mid_pos1, my_head_pos, mid_pos2, t % 0.5)
+			mvector3.step(mid_pos2, mid_pos1, e_pos, 50)
+			focus_enemy_pen:line(mid_pos1, mid_pos2)
+
+			if l_data.attention_obj.unit:base() and l_data.attention_obj.unit:base().is_local_player then
+				focus_player_brush:sphere(my_head_pos, 20)
+			end
+		end
+	end
+
+	local groups = {
+		{
+			group = self._police,
+			color = Color(1, 1, 0, 0)
+		},
+		{
+			group = managers.enemy:all_civilians(),
+			color = Color(1, 0.75, 0.75, 0.75)
+		},
+		{
+			group = self._ai_criminals,
+			color = Color(1, 0, 1, 0)
+		}
+	}
+
+	for _, group_data in ipairs(groups) do
+		for u_key, u_data in pairs(group_data.group) do
+			_f_draw_obj_pos(u_data.unit)
+
+			if camera then
+				local l_data = u_data.unit:brain()._logic_data
+
+				_f_draw_logic_name(u_key, l_data, group_data.color)
+				_f_draw_attention_on_player(l_data)
+			end
+		end
+	end
+
+	for u_key, gui_text in pairs(logic_name_texts) do
+		local keep = nil
+
+		for _, group_data in ipairs(groups) do
+			if group_data.group[u_key] then
+				keep = true
+
+				break
+			end
+		end
+
+		if not keep then
+			panel:remove(gui_text)
+
+			logic_name_texts[u_key] = nil
+		end
+	end
+
+	for group_id, gui_text in pairs(group_id_texts) do
+		if not self._groups[group_id] then
+			panel:remove(gui_text)
+
+			group_id_texts[group_id] = nil
+		end
 	end
 end

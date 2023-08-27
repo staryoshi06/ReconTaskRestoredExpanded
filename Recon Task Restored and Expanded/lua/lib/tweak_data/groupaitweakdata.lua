@@ -8,7 +8,7 @@ function GroupAITweakData:getHeistType()
         return nil
     elseif level_id == "firestarter_2" or level_id == "hox_2" or level_id == "hox_3" then
         return "fbi"
-    elseif level_id == "welcome_to_the_jungle_2" or level_id == "chew" or level_id == "chca" or level_id == "trai" or (self.rtre_menu_data and self.rtre_menu_data.enemy_set == 2) then
+    elseif level_id == "welcome_to_the_jungle_2" or level_id == "chew" or level_id == "chca" or level_id == "trai" or level_id == "deep" or (self.rtre_menu_data and self.rtre_menu_data.enemy_set == 2) then
         return "remote"
     elseif level_id == "rvd1" or level_id == "rvd2" then
         return "la"
@@ -1228,6 +1228,12 @@ Hooks:PostHook(GroupAITweakData, "_init_task_data", "star_recon_init_task_data",
             table.insert(self.star_recon_groups_to_inject, "tac_reenforce_1heavy")
             table.insert(self.star_recon_groups_to_inject, "tac_reenforce_2heavies")
             table.insert(self.star_recon_groups_to_inject, "tac_reenforce_team")
+
+            self.besiege.reenforce.interval = {
+                30,
+                20,
+                10
+            }
         end
         --classic enemy set
         if self.rtre_menu_data.enemy_set == 3 then
