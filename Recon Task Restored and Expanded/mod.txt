@@ -31,6 +31,10 @@
 		{
 			"hook_id" : "lib/managers/menumanager",
 			"script_path" : "lua/lib/managers/menumanager.lua"
+		},
+		{
+			"hook_id" : "lib/units/enemies/cop/logics/coplogicidle",
+			"script_path" : "lua/lib/units/enemies/cop/logics/coplogicidle.lua"
 		}
 	],
 	"updates" :

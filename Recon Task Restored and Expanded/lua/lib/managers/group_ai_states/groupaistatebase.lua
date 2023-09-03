@@ -11,7 +11,7 @@ Hooks:PostHook(GroupAIStateBase, "unregister_rescueable_hostage", "star_recon_un
         self._recon_obj_count = self._recon_obj_count - 1
     end
 
-    if self._recon_obj_count = 0 then
+    if self._recon_obj_count == 0 then
         self._recon_obj_count = nil
     end
 end)
@@ -29,7 +29,7 @@ Hooks:PostHook(GroupAIStateBase, "unregister_loot", "star_recon_unregister_loot"
         self._recon_obj_count = self._recon_obj_count - 1
     end
 
-    if self._recon_obj_count = 0 then
+    if self._recon_obj_count == 0 then
         self._recon_obj_count = nil
     end
 end)
