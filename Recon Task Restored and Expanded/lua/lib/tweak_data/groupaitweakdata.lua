@@ -1113,8 +1113,6 @@ Hooks:PostHook(GroupAITweakData, "_init_enemy_spawn_groups", "star_recon_init_en
                         r_tab[k] = v
                         if k == "unit" and replacements[v] then
                             sh_tab[k] = replacements[v]
-                        elseif k == "tactics" then
-                            sh_tab[k] = self._tactics.recon_rescue
                         else
                             sh_tab[k] = v
                         end
