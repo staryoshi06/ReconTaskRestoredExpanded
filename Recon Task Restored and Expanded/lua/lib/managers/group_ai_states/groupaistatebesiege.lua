@@ -23,7 +23,6 @@ Hooks:PostHook(GroupAIStateBesiege, "_end_regroup_task", "star_recon_end_regroup
     -- extend break only if not skirmish
     local extend_break = not managers.skirmish:is_skirmish()
     local assault_task = self._task_data.assault
-    self._task_data.recon.break_extended = nil
 
     -- if players have hostages then increase assault break
     if extend_break and self._hostage_headcount > 0 then
@@ -43,7 +42,6 @@ Hooks:PostHook(GroupAIStateBesiege, "_end_regroup_task", "star_recon_end_regroup
             break_time = 60
         end
         assault_task.next_dispatch_t = self._t + break_time
-        self._task_data.recon.break_extended = true
 	end
 end)
 
@@ -69,6 +67,34 @@ function GroupAIStateBesiege:is_recon_allowed()
         return true
     end
     return false
+end
+
+function GroupAIStateBesiege:verify_recon_suitability(area)
+    -- recon cannot enter during assault or can conditionally enter to rescue hostages
+    if self._task_data.assault.active and (not self._recon_assault_condition or self._recon_assault_condition < 3) then
+        return self._recon_assault_condition and self._recon_assault_condition == 2 and area.hostages
+    end
+    -- recon can fight criminals if there are no other objectives left.
+    if not self._recon_objectives and (not self._task_data.assault.active or self._recon_assault_condition == 4) then
+        return next(area.criminal.units)
+    end
+    return area.hostages or area.loot
+end
+
+function GroupAIStateBesiege:_get_group_area_coarse_path_index(group)
+	local coarse_path = group.objective.coarse_path
+	local forwardmost_i_nav_point = #coarse_path
+
+	while forwardmost_i_nav_point > 0 do
+		local nav_seg = coarse_path[forwardmost_i_nav_point][1]
+		local area = self:get_area_from_nav_seg_id(nav_seg)
+
+		if area == group.objective.area then
+            return forwardmost_i_nav_point
+        end
+
+		forwardmost_i_nav_point = forwardmost_i_nav_point - 1
+	end
 end
 
 --to do this with a hook it's potentially too performance-damaging so it's redefined
@@ -190,7 +216,7 @@ function GroupAIStateBesiege:_begin_new_tasks()
             end
         end
 
-        if recon_candidates and (area.loot or area.hostages) then
+        if recon_candidates and self:verify_recon_suitability(area) then
             local occupied = nil
             local awaiting_dispatch = nil
 
@@ -285,17 +311,13 @@ function GroupAIStateBesiege:_begin_new_tasks()
         i = i + 1
     until i > #to_search_areas
 
-    if recon_data.break_extended and assault_data.active then
-        recon_data.break_extended = nil
-    end
-
     if recon_candidates and #recon_candidates == 0 then
         recon_candidates = backup_recon_candidates
         recon_candidates_are_safe = backup_recon_candidates_are_safe
     end
 
-    --prevent cheese tactic, if no recon objectives or tasks and assault break is extended, or recon is set to appear always, then set task on the player
-    if recon_candidates and not recon_candidates[1] and not recon_data.tasks[1] and (recon_data.break_extended or self._recon_assault_condition == 4) then
+    --if no recon objectives or tasks and it's the assault break, or recon is set to appear always, then set task on the player
+    if recon_candidates and not recon_candidates[1] and not recon_data.tasks[1] and (not self._task_data.assault.active or self._recon_assault_condition == 4) then
         recon_candidates_are_safe = false
         if assault_candidates then
             recon_candidates = assault_candidates
@@ -461,7 +483,16 @@ function GroupAIStateBesiege:_upd_recon_tasks()
         if next(self._spawning_groups) then
             --Nothing
         else
-            local spawn_group, spawn_group_type = self:_find_spawn_group_near_area(task_data.target_area, self._tweak_data.recon.groups, nil, nil, callback(self, self, "_verify_anticipation_spawn_point"))
+            local spawn_group, spawn_group_type
+            --if we're attacking a cool area, let's find a safer spot to spawn
+            if not next(task_data.target_area.criminal.units) then
+                spawn_group, spawn_group_type = self:_find_spawn_group_near_area(task_data.target_area, self._tweak_data.recon.groups, nil, nil, callback(self, self, "_verify_anticipation_spawn_point"))
+            end
+
+            --couldn't find a safe spot, or we're attacking a hot area
+            if not spawn_group then
+                spawn_group, spawn_group_type = self:_find_spawn_group_near_area(task_data.target_area, self._tweak_data.recon.groups, nil, nil, nil)
+            end
 
             if spawn_group then
                 local grp_objective = {
@@ -534,14 +565,15 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
     local tactics_map = group_leader_u_data and group_leader_u_data.tactics
 
     local is_law = group.team and group.team.id == "law1"
-    local crim_obj_allowed = self._task_data.recon.break_extended or self._recon_assault_condition == 4 or self._task_data.assault.is_first or not is_law
-    local engage_criminals = crim_obj_allowed and not self._recon_obj_count or not is_law
+    local crim_obj_allowed = not self._task_data.assault.active or self._recon_assault_condition == 4 or not is_law
+    local engage_criminals = crim_obj_allowed and (not self._recon_objectives or not is_law or (current_objective.temporary_engagement_t and current_objective.temporary_engagement_t > self._t))
     local crims_at_obj = next(target_area.criminal.units)
 
     local coward = tactics_map and tactics_map.ranged_fire and not engage_criminals
     local charge = tactics_map and tactics_map.charge or not is_law
 
-	if not target_area.loot and not target_area.hostages and (not crim_obj_allowed or not (engage_criminals and crims_at_obj)) or not current_objective.moving_out and current_objective.moved_in and group.in_place_t and self._t - group.in_place_t > 15 then
+    -- need to find a new objective
+	if not self:verify_recon_suitability(target_area) and not (engage_criminals and crims_at_obj) or not current_objective.moving_out and current_objective.moved_in and group.in_place_t and self._t - group.in_place_t > 15 then
 		local recon_area = nil
 		local to_search_areas = {
 			current_objective.area
@@ -561,9 +593,9 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 
 		repeat
 			local search_area = table.remove(to_search_areas, 1)
-            local is_area_safe = not next(search_area.criminal.units)
+            local is_area_safe = not next(search_area.criminal.units) and not unsafe_areas[search_area]
 
-			if (search_area.loot or search_area.hostages) and is_law then
+			if self:verify_recon_suitability(search_area) and is_law then
 				local occupied = nil
 
                 -- check if there is already a queued task for this area
@@ -637,11 +669,12 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
             areas_are_safe = backup_areas_are_safe
         end
 
-        -- if allowing recon task to set objective on criminals, not already fighting criminals and there are no normal objectives, then go to criminal objectives 
-        if crim_obj_allowed and #areas_to_investigate == 0 and not crims_at_obj and #criminal_areas > 0 then
+        -- if allowing recon task to set objective on criminals and there are no normal objectives, then go to criminal objectives 
+        if crim_obj_allowed and #areas_to_investigate == 0 and #criminal_areas > 0 then
             areas_to_investigate = criminal_areas
             areas_are_safe = false
             engage_criminals = true
+            coward = nil
         end
 
         if #areas_to_investigate > 0 then
@@ -711,8 +744,20 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
                     end
                 end
                 recon_area = furthest_area
+            elseif #areas_to_investigate > 1 then
+                -- pick closest area
+                local closest_area = nil
+                local closest_area_dist = nil
+                for _, area in pairs(areas_to_investigate) do
+                    local dist = mvector3.distance_sq(area.pos, current_objective.area.pos)
+                    if not closest_area_dist or closest_area_dist > dist then
+                        closest_area_dist = dist
+                        closest_area = area
+                    end
+                end
+                recon_area = closest_area
             else
-                recon_area = areas_to_investigate[math.random(#areas_to_investigate)]
+                recon_area = areas_to_investigate[1]
             end
         end
 
@@ -748,15 +793,20 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 				coarse_path = coarse_path
 			}
 
+            -- temporary engaging if cannot find an objective
+            if engage_criminals and self._recon_objectives then
+                grp_objective.temporary_engagement_t = self._t + 5
+            end
+
 			self:_set_objective_to_enemy_group(group, grp_objective)
 
 			current_objective = group.objective
-        elseif current_objective and not engage_criminals and (not current_objective.assigned_t or self._t > current_objective.assigned_t + 10) then
-            --STUCK
+        elseif current_objective and (not current_objective.assigned_t or self._t > current_objective.assigned_t + 10) then
             if (not current_objective.assigned_t) then
                 --loud might have just started, wait a few seconds
                 current_objective.assigned_t = self._t
             else
+                --stuck or useless
                 current_objective.type = "defend_area" --retires asap while not contributing to recon or assault force
                 --log("RTRE: Unit stuck, retiring asap")
             end
@@ -779,7 +829,7 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
                             end
                             -- else 
                             current_objective.unsafe = true
-                            current_objective.unsafe_t = self._t
+                            current_objective.unsafe_t = current_objective.unsafe_t or self._t
                         end
                     end
                 end
@@ -832,25 +882,47 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
                         return
                     end
                 else
-                    local advance = true
                     local current_area = self:get_area_from_nav_seg_id(current_objective.coarse_path[forwardmost_i_nav_point][1])
-                    -- group up at last area. this is either the target area, or the entry point, usually. If it's neither then it'll be reassigned real quick.
-                    -- if it's not the last area then the forwardmost unit determines gained ground.
-                    if current_area == current_objective.area then
-                        advance = false
-                    elseif forwardmost_i_nav_point == #current_objective.coarse_path then
-                        --only make this the current area if everyone has arrived
-                        for u_key, u_data in pairs(group.units) do
-                            if not current_area or not current_area.nav_segs[u_data.tracker:nav_segment()] then
-                                advance = false
+                    local current_area_index = self:_get_group_area_coarse_path_index(group)
+                    -- forwardmost unit determines gained ground.
+                    if (not current_area_index or current_area_index < forwardmost_i_nav_point) and current_area ~= current_objective.area then
+                        -- if far from criminals we want to stand so we can run faster
+                        local wanted_pose = "crouch"
+                        if charge then
+                            wanted_pose = "stand"
+                        else
+                            local criminal_areas = {}
+                            local found_areas = {}
+                            for criminal_key, criminal_data in pairs(self._char_criminals) do
+                                if not criminal_data.status then
+                                    local nav_seg = criminal_data.tracker:nav_segment()
+                                    local area = self:get_area_from_nav_seg_id(nav_seg)
+                
+                                    if not found_areas[area] then
+                                        table.insert(criminal_areas, area)
+                                        found_areas[area] = true
+                                    end
+                                end
+                            end
+                            local closest_c_area_dist = nil
+                            for _, c_area in pairs(criminal_areas) do
+                                if c_area == area then
+                                    closest_c_area_dist = 0
+                                    break
+                                end
+                                local dist = mvector3.distance_sq(current_area.pos, c_area.pos)
+                                if not closest_c_area_dist or dist < closest_c_area_dist then
+                                    closest_c_area_dist = dist
+                                end
+                            end
+                            if closest_c_area_dist >= 9000000 then -- 30 metres
+                                wanted_pose = "stand"
                             end
                         end
-                    end
-                    if advance then 
                         -- set objective area to current area so they can path properly and certain functions execute properly
                         local grp_objective = {
                             scan = true,
-                            pose = charge and "stand" or "crouch",
+                            pose = wanted_pose,
                             type = "recon_area",
                             stance = "hos",
                             attitude = engage_criminals and "engage" or "avoid",
@@ -861,7 +933,6 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
                             target_area = current_objective.target_area,
                             coarse_path = current_objective.coarse_path
                         }
-                        grp_objective.area = current_area
 
                         self:_set_objective_to_enemy_group(group, grp_objective)
                     end
@@ -893,7 +964,7 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
         end
 
         -- after spawning or reaching a new area, or criminals got in the way
-		if (not current_objective.moving_out or (current_objective.unsafe and (current_objective.unsafe_t > self._t + 10))) and not current_objective.area.neighbours[current_objective.target_area.id] and not (current_objective.area == current_objective.target_area) then
+		if (not current_objective.moving_out or (current_objective.unsafe and current_objective.unsafe_t < self._t)) and not current_objective.area.neighbours[current_objective.target_area.id] and not (current_objective.area == current_objective.target_area) then
             -- check for alternate path if flanking and target area contains players.
             local alt_area = nil
             if tactics_map and tactics_map.flank and next(current_objective.target_area.criminal.units) then
@@ -947,7 +1018,7 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 			}
 			local coarse_path = managers.navigation:search_coarse(search_params)
 
-            local unsafe = current_objective.unsafe and current_objective.moving_out -- if no longer moving out we want a new path regardless
+            local unsafe = current_objective.unsafe and current_objective.moving_out -- existing path is already unsafe and we don't need a new one
             if not coarse_path and not unsafe then
                 -- i guess we'll have to go through them
                 unsafe = true
@@ -972,10 +1043,22 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 				}
 
 				self:_set_objective_to_enemy_group(group, grp_objective)
+            elseif current_objective.unsafe_t and current_objective.moving_out then
+                -- wait before trying to find a safe route again
+                current_objective.unsafe_t = self._t + 5
+            elseif not current_objective.moving_out then
+                -- can't find a way there
+                current_objective.target_area = nil
 			end
 		end
 
-		if not current_objective.moving_out and ((current_objective.area == current_objective.target_area) or current_objective.area.neighbours[current_objective.target_area.id]) then
+		if not current_objective.moving_out and current_objective.target_area and ((current_objective.area == current_objective.target_area) or current_objective.area.neighbours[current_objective.target_area.id]) then
+            -- wait for all units to group up
+            for u_key, u_data in pairs(group.units) do
+                if not current_objective.area.nav_segs[u_data.tracker:nav_segment()] then
+                    return
+                end
+            end
             local area_hostile = next(current_objective.target_area.criminal.units)
 			local grp_objective = {
 				stance = area_hostile and "cbt" or "hos",
@@ -1002,6 +1085,7 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 			end
 		end
 	end
+    -- here we should direct recon to rescue hostages and loot
 end
 
 Hooks:PostHook(GroupAIStateBesiege, "_assign_group_to_retire", "star_recon_retire_group", function(self, group)
