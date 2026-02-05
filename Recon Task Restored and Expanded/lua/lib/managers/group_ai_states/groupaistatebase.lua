@@ -12,7 +12,7 @@ Hooks:PostHook(GroupAIStateBase, "unregister_rescueable_hostage", "star_recon_un
     if self._recon_objectives and self._recon_objectives[u_key] then
         self._recon_objectives[u_key] = nil
     end
-    if not next(self._recon_objectives) then
+    if self._recon_objectives and not next(self._recon_objectives) then
         self._recon_objectives = nil
     end
 end)
@@ -30,7 +30,7 @@ Hooks:PostHook(GroupAIStateBase, "unregister_loot", "star_recon_unregister_loot"
     if self._recon_objectives and self._recon_objectives[loot_u_key] then
         self._recon_objectives[loot_u_key] = nil
     end
-    if not next(self._recon_objectives) then
+    if self._recon_objectives and not next(self._recon_objectives) then
         self._recon_objectives = nil
     end
 end)

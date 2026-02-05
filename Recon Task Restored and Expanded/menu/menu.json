@@ -6,36 +6,94 @@
     "items" : [
         {
             "type" : "multiple_choice",
-            "id" : "recon_enemy_set",
-            "title" : "recon_enemy_set_title",
+            "id" : "recon_enemy_set_america",
+            "title" : "recon_enemy_set_america_title",
             "description" : "recon_enemy_set_desc",
-            "callback" : "clbk_recon_enemy_set",
+            "callback" : "clbk_recon_enemy_set_america",
             "items" : [
-                "enemy_set_normal",
-                "enemy_set_no_cops",
-                "enemy_set_classic",
-                "enemy_set_swats",
-                "enemy_set_assault"
+                "enemy_set_standard",
+                "enemy_set_fixed_diff",
+                "enemy_set_fixed",
+                "enemy_set_swat",
+                "enemy_set_none",
+                "enemy_set_original"
             ],
-            "value" : "enemy_set"
+            "value" : "enemy_set_america"
         },
         {
             "type" : "multiple_choice",
-            "id" : "recon_murky_set",
-            "title" : "recon_murky_set_title",
-            "description" : "recon_murky_set_desc",
-            "callback" : "clbk_recon_murky_set",
+            "id" : "recon_enemy_set_russia",
+            "title" : "recon_enemy_set_russia_title",
+            "description" : "recon_enemy_set_desc",
+            "callback" : "clbk_recon_enemy_set_russia",
             "items" : [
-                "murky_set_normal",
-                "murky_set_flashlights",
-                "murky_set_old"
+                "enemy_set_standard",
+                "enemy_set_fixed_diff",
+                "enemy_set_fixed",
+                "enemy_set_swat",
+                "enemy_set_none",
+                "enemy_set_original"
             ],
-            "value" : "murky_set"
+            "value" : "enemy_set_russia"
+        },
+        {
+            "type" : "multiple_choice",
+            "id" : "recon_enemy_set_zombie",
+            "title" : "recon_enemy_set_zombie_title",
+            "description" : "recon_enemy_set_desc",
+            "callback" : "clbk_recon_enemy_set_zombie",
+            "items" : [
+                "enemy_set_standard",
+                "enemy_set_fixed_diff",
+                "enemy_set_fixed",
+                "enemy_set_swat",
+                "enemy_set_none",
+                "enemy_set_original"
+            ],
+            "value" : "enemy_set_zombie"
+        },
+        {
+            "type" : "multiple_choice",
+            "id" : "recon_enemy_set_murky",
+            "title" : "recon_enemy_set_murky_title",
+            "description" : "recon_enemy_set_desc",
+            "callback" : "clbk_recon_enemy_set_murky",
+            "items" : [
+                "enemy_set_standard",
+                "enemy_set_fixed_diff",
+                "enemy_set_fixed",
+                "enemy_set_swat",
+                "enemy_set_none"
+            ],
+            "value" : "enemy_set_murky"
+        },
+        {
+            "type" : "multiple_choice",
+            "id" : "recon_enemy_set_federales",
+            "title" : "recon_enemy_set_federales_title",
+            "description" : "recon_enemy_set_desc",
+            "callback" : "clbk_recon_enemy_set_federales",
+            "items" : [
+                "enemy_set_standard",
+                "enemy_set_fixed_diff",
+                "enemy_set_fixed",
+                "enemy_set_swat",
+                "enemy_set_none"
+            ],
+            "value" : "enemy_set_federales"
+        },
+        {
+            "type" : "toggle",
+            "id" : "recon_no_lights",
+            "title" : "recon_no_lights_title",
+            "description" : "recon_no_lights_exp",
+            "callback" : "clbk_recon_no_lights",
+            "value" : "no_lights"
         },
         {
             "type" : "toggle",
             "id" : "recon_bronco_guy",
-            "title" : "recon_bronco_guy_exp",
+            "title" : "recon_bronco_guy_title",
             "description" : "recon_bronco_guy_exp",
             "callback" : "clbk_recon_bronco_guy",
             "value" : "bronco_guy"
@@ -57,6 +115,34 @@
                 "assault_condition_always"
             ],
             "value" : "assault_condition"
+        },
+        {
+            "type" : "toggle",
+            "id" : "recon_sneaky_recon",
+            "title" : "recon_sneaky_recon_title",
+            "description" : "recon_sneaky_recon_desc",
+            "callback" : "clbk_recon_sneaky_recon",
+            "value" : "sneaky_recon"
+        },
+        {
+            "type" : "toggle",
+            "id" : "recon_bag_fix",
+            "title" : "recon_bag_fix_title",
+            "description" : "recon_bag_fix_desc",
+            "callback" : "clbk_recon_bag_fix",
+            "value" : "bag_fix"
+        },
+        {
+            "type" : "toggle",
+            "id" : "recon_gangster_no_flee",
+            "title" : "recon_gangster_no_flee_title",
+            "description" : "recon_gangster_no_flee_desc",
+            "callback" : "clbk_recon_gangster_no_flee",
+            "value" : "gangster_no_flee"
+        },
+        {
+            "type" : "divider",
+            "size" : 8
         },
         {
             "type" : "toggle",
